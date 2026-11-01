@@ -148,12 +148,16 @@ REPORT_Q = """query($code: String!, $fights: [Int]!) {
 _debug_printed = False
 
 
-def ranked_runs(api, encounter_id, level, want, region, max_pages=2):
-    """Уникальные (код отчёта, id боя) тайм-забегов на нужном уровне из рейтинга WCL.
-    Запросы рейтингов дорогие (отдельный лимит WCL), поэтому листаем не больше max_pages страниц."""
+def ranked_runs(api, encounter_id, level, want, region, entry=None):
+    """Дополняет запись рейтинга из кэша до want уникальных забегов (код отчёта, id боя),
+    продолжая листать страницы с того места, где остановились в прошлый раз.
+    Запись: {"t": когда начали, "keys": [...], "page": последняя страница, "done": страниц больше нет}."""
     global _debug_printed
-    seen, page = [], 1
-    while len(seen) < want and page <= max_pages:
+    entry = entry or {"t": time.time(), "keys": [], "page": 0, "done": False}
+    seen = [tuple(k) for k in entry["keys"]]
+    page = entry.get("page", 1) + 1
+    empty_pages = 0
+    while len(seen) < want and not entry.get("done"):
         data = api.query(RANKINGS_Q, {"id": encounter_id, "bracket": level, "page": page, "region": region})
         rk = data["worldData"]["encounter"]["characterRankings"] or {}
         if isinstance(rk, str):
@@ -169,10 +173,13 @@ def ranked_runs(api, encounter_id, level, want, region, max_pages=2):
             _debug_printed = True
             print("  [отладка] не понял формат рейтинга, первая запись:",
                   json.dumps(rankings[0], ensure_ascii=False)[:600])
-        if len(seen) == before or not rk.get("hasMorePages"):
-            break
+        entry["page"] = page
+        empty_pages = empty_pages + 1 if len(seen) == before else 0
+        if not rk.get("hasMorePages") or empty_pages >= 2:
+            entry["done"] = True
         page += 1
-    return seen[:want]
+    entry["keys"] = seen
+    return entry
 
 
 def spec_key(cls, spec):
@@ -256,18 +263,30 @@ def to_lua(v, indent=0):
     raise TypeError(type(v))
 
 
-def collect_runs(zone, cache, lo, hi, region, dungeons=None):
+def parse_levels(spec, lo, hi):
+    """"10-22,2-9,23-30" -> [10..22, 2..9, 23..30] в порядке важности, в пределах уровней зоны, без повторов."""
+    order = []
+    for part in spec.split(","):
+        a, _, b = part.strip().partition("-")
+        for level in range(int(a), int(b or a) + 1):
+            if lo <= level <= hi and level not in order:
+                order.append(level)
+    return order
+
+
+def collect_runs(zone, cache, levels, region, dungeons=None):
     """Все уже скачанные забеги нужных уровней, сгруппированные по данжам (в т.ч. от прошлых запусков)."""
     offset = cache.get("bracket_offset", 0)
+    wanted = set(levels)
     result = {}
     for enc in zone["encounters"]:
         if dungeons and not any(d.lower() in enc["name"].lower() for d in dungeons):
             continue
         runs, seen = [], set()
-        for level in range(lo, hi + 1):
+        for level in levels:
             for code, fid in rk_keys(cache.get(f"rk:{enc['id']}:{level - offset}:{region}")):
                 ck = f"{code}:{fid}"
-                if ck not in seen and cache.get(ck) and lo <= cache[ck]["l"] <= hi:
+                if ck not in seen and cache.get(ck) and cache[ck]["l"] in wanted:
                     seen.add(ck)
                     runs.append(cache[ck])
         result[enc["id"]] = {"name": enc["name"], "runs": runs}
@@ -324,9 +343,10 @@ def main():
     ap.add_argument("--client-id", default=os.environ.get("WCL_CLIENT_ID"))
     ap.add_argument("--client-secret", default=os.environ.get("WCL_CLIENT_SECRET"))
     ap.add_argument("--zone", type=int, help="ID зоны Mythic+ на WCL (по умолчанию — текущий сезон)")
-    ap.add_argument("--min-level", type=int, default=10)
-    ap.add_argument("--max-level", type=int, default=16)
-    ap.add_argument("--runs", type=int, default=25, help="забегов на данж и уровень")
+    ap.add_argument("--levels", default="10-22,2-9,23-30",
+                    help="уровни ключей в порядке важности: сначала качается первая группа целиком, потом следующая")
+    ap.add_argument("--runs", default="25,50,100",
+                    help="забегов на данж и уровень, волнами: сначала все уровни до 25, потом все до 50 и т.д.")
     ap.add_argument("--region", help="регион серверов: EU, US, KR, TW, CN (по умолчанию все)")
     ap.add_argument("--dungeon", action="append", help="только эти данжи (часть названия), можно несколько")
     ap.add_argument("--out", default=DEFAULT_OUT)
@@ -343,7 +363,8 @@ def main():
     zone = find_zone(api, args.zone)
     print(f"Зона: {zone['name']} (id {zone['id']}), данжей: {len(zone['encounters'])}")
     br = zone.get("brackets") or {}
-    lo, hi = max(args.min_level, br.get("min") or 0), min(args.max_level, br.get("max") or 99)
+    levels = parse_levels(args.levels, br.get("min") or 2, br.get("max") or 30)
+    print(f"Порядок уровней: {', '.join(f'+{l}' for l in levels)}")
 
     cache = {}
     if os.path.exists(args.cache):
@@ -354,12 +375,15 @@ def main():
         with open(args.cache, "w", encoding="utf-8") as fh:
             json.dump(cache, fh)
 
+    encounters = [e for e in zone["encounters"]
+                  if not args.dungeon or any(d.lower() in e["name"].lower() for d in args.dungeon)]
+    tiers = [int(x) for x in str(args.runs).split(",")]
     complete = True
     try:
-        for enc in zone["encounters"]:
-            if args.dungeon and not any(d.lower() in enc["name"].lower() for d in args.dungeon):
-                continue
-            for level in range(lo, hi + 1):
+        # волна за волной (25, 50, 100 забегов), внутри волны — уровень за уровнем по всем данжам:
+        # так самые важные уровни получают первую порцию данных раньше всех
+        for tier, level in ((t, l) for t in tiers for l in levels):
+            for enc in encounters:
                 # номер "bracket" в рейтинге WCL не всегда равен уровню ключа (в S2 Midnight: bracket N = ключ +N+1);
                 # смещение определяется по первому скачанному забегу
                 bracket = level - cache.get("bracket_offset", 0)
@@ -367,11 +391,11 @@ def main():
                 entry = cache.get(rk_key)
                 if isinstance(entry, list):  # старый формат кэша — считаем скачанным только что
                     entry = cache[rk_key] = {"t": time.time(), "keys": entry}
-                if entry and time.time() - entry["t"] < args.refresh_days * 86400:
-                    keys = rk_keys(entry)
-                else:
-                    keys = ranked_runs(api, enc["id"], bracket, args.runs, args.region)
-                    cache[rk_key] = {"t": time.time(), "keys": keys}
+                if entry and time.time() - entry["t"] >= args.refresh_days * 86400:
+                    entry = None  # рейтинг устарел — начинаем листать заново
+                if not entry or (len(entry["keys"]) < tier and not entry.get("done")):
+                    entry = cache[rk_key] = ranked_runs(api, enc["id"], bracket, tier, args.region, entry)
+                keys = rk_keys(entry)[:tier]
                 fetched = 0
                 for code, fid in keys:
                     ck = f"{code}:{fid}"
@@ -400,7 +424,7 @@ def main():
     finally:
         save_cache()
 
-    data = build_data(zone, collect_runs(zone, cache, lo, hi, args.region, args.dungeon))
+    data = build_data(zone, collect_runs(zone, cache, levels, args.region, args.dungeon))
     data["complete"] = complete
     with open(args.out, "w", encoding="utf-8") as fh:
         fh.write("-- Сгенерировано tools/wcl_fetch.py — не редактируйте вручную\n")
