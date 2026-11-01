@@ -75,16 +75,21 @@ def main():
     print("==============================================\n")
 
     s = load_settings()
-    if s.get("data_url"):
-        # готовые данные, которые собирает сервер (GitHub Actions) — ключи WCL не нужны
-        import urllib.request
+    if s.get("data_repo"):
+        # готовые данные, которые собирает сервер (GitHub Actions) — ключи WCL не нужны.
+        # Репозиторий приватный, поэтому качаем через GitHub CLI (gh auth login).
+        import subprocess
         addons = find_addons_dir(s)
         s["addons_dir"] = addons
         save_settings(s)
-        print("Скачиваю свежие данные...")
-        target = os.path.join(ROOT, "KeyChance", "Data.lua")
-        with urllib.request.urlopen(s["data_url"], timeout=60) as resp, open(target, "wb") as fh:
-            fh.write(resp.read())
+        print("Скачиваю свежие данные с GitHub...")
+        gh = shutil.which("gh") or r"C:\Program Files\GitHub CLI\gh.exe"
+        r = subprocess.run([gh, "api", f"repos/{s['data_repo']}/contents/KeyChance/Data.lua",
+                            "-H", "Accept: application/vnd.github.raw"], capture_output=True)
+        if r.returncode != 0:
+            raise RuntimeError(r.stderr.decode("utf-8", "replace").strip())
+        with open(os.path.join(ROOT, "KeyChance", "Data.lua"), "wb") as fh:
+            fh.write(r.stdout)
         dest = os.path.join(addons, "KeyChance")
         shutil.copytree(os.path.join(ROOT, "KeyChance"), dest, dirs_exist_ok=True)
         print(f"\nГОТОВО. Аддон обновлён: {dest}")
@@ -104,7 +109,7 @@ def main():
     print("Качаю данные, это может занять долго. Не закрывайте окно.\n")
     sys.argv = [
         "wcl_fetch.py", "--client-id", s["client_id"], "--client-secret", s["client_secret"],
-        "--min-level", "10", "--max-level", "22", "--runs", "25", "--region", "EU",
+        "--levels", "10-22,2-9,23-30", "--runs", "25", "--region", "EU",
     ]
     try:
         wcl_fetch.main()
