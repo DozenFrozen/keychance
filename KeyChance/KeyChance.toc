@@ -1,0 +1,14 @@
+## Interface: 120001, 120005, 120007
+## Title: KeyChance
+## Notes: Шанс прохождения Мифик+ в тайм на основе статистики WarcraftLogs
+## Notes-ruRU: Шанс прохождения Мифик+ в тайм на основе статистики WarcraftLogs
+## Author: DzF
+## Version: 1.0.0
+## SavedVariables: KeyChanceDB
+
+Specs.lua
+Data.lua
+Model.lua
+Damage.lua
+Core.lua
+UI.lua
