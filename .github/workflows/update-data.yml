@@ -31,7 +31,7 @@ jobs:
           WCL_CLIENT_SECRET: ${{ secrets.WCL_CLIENT_SECRET }}
         # порядок важности: сначала +10..+22, потом +2..+9, потом +23 и выше
         # и волнами по объёму: сначала по 25 забегов на всё, потом до 50, потом до 100
-        run: python tools/wcl_fetch.py --levels "10-22,2-9,23-30" --runs "25,50,100" --region EU --no-wait
+        run: python -u tools/wcl_fetch.py --levels "10-22,2-9,23-30" --runs "25,50,100" --region EU --no-wait --max-minutes 40
 
       - name: Commit data
         run: |
