@@ -1,4 +1,6 @@
-# Каждый час качает с WarcraftLogs столько, сколько позволяет лимит API, и сохраняет результат в репозиторий.
+# Качает с WarcraftLogs столько, сколько позволяет лимит API, и сохраняет результат в репозиторий.
+# Один запуск работает до ~6 часов: порция → коммит → ждёт сброса лимита → следующая порция.
+# Если скачано не всё, в конце запускает сам себя заново. Cron — запасной вариант, если цепочка оборвётся.
 # Когда всё скачано, запуски почти ничего не делают, а раз в 7 дней рейтинги обновляются.
 name: Update WCL data
 
@@ -9,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  actions: write  # чтобы запустить следующий запуск цепочки
 
 concurrency:
   group: wcl-data
@@ -17,7 +20,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 350  # у GitHub предел 360
     steps:
       - uses: actions/checkout@v5
 
@@ -29,21 +32,39 @@ jobs:
         env:
           WCL_CLIENT_ID: ${{ secrets.WCL_CLIENT_ID }}
           WCL_CLIENT_SECRET: ${{ secrets.WCL_CLIENT_SECRET }}
+          GH_TOKEN: ${{ github.token }}
         # порядок важности: сначала +10..+22, потом +2..+9, потом +23 и выше
         # и волнами по объёму: сначала по 25 забегов на всё, потом до 50, потом до 100
-        run: python -u tools/wcl_fetch.py --levels "10-22,2-9,23-30" --runs "25,50,100" --region EU --no-wait --max-minutes 40
-
-      # и после ошибки скачивания: кэш сохраняется в finally, скачанное не должно пропадать
-      - name: Commit data
-        if: ${{ !cancelled() }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add KeyChance/Data.lua tools/wcl_cache.json
-          if git diff --cached --quiet; then
-            echo "Нет изменений"
-          else
-            git commit -m "Update WCL data"
-            git pull --rebase
-            git push
-          fi
+          start=$(date +%s)
+          while true; do
+            python -u tools/wcl_fetch.py --levels "10-22,2-9,23-30" --runs "25,50,100" --region EU --no-wait --max-minutes 40 \
+              || failed=1
+            git add KeyChance/Data.lua tools/wcl_cache.json
+            if git diff --cached --quiet; then
+              echo "Нет изменений"
+            else
+              git commit -m "Update WCL data"
+              git pull --rebase
+              git push
+            fi
+            if [ -n "$failed" ]; then
+              echo "Ошибка скачивания — цепочка остановлена, продолжит запуск по расписанию"
+              exit 1
+            fi
+            if grep -q '^    complete = true,' KeyChance/Data.lua; then
+              echo "Всё скачано"
+              exit 0
+            fi
+            # лимит WCL сбрасывается не позже чем через час после того, как закончился
+            # следующая порция (до 45 мин) + ожидание должны уложиться в timeout-minutes
+            if [ $(( $(date +%s) - start + 61*60 + 45*60 )) -gt $(( 345*60 )) ]; then
+              break
+            fi
+            echo "Жду сброса лимита API (61 мин)..."
+            sleep $(( 61*60 ))
+          done
+          echo "Время запуска на исходе — запускаю следующий"
+          gh workflow run update-data.yml --ref main
