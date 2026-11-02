@@ -217,7 +217,11 @@ function KC.Preview(mapID, level)
         instanceID = instanceID, level = level, timeLimit = timeLimit, elapsed = 0,
         kills = {}, specs = specs, bias = KC.db.bias,
     })
-    return { name = name, level = level, timeLimit = timeLimit, specs = specs, result = res }
+    local groupSize = IsInGroup() and GetNumGroupMembers() or 1
+    return {
+        name = name, level = level, timeLimit = timeLimit, specs = specs, result = res,
+        groupSize = groupSize, groupReady = groupSize >= 5,
+    }
 end
 
 ------------------------------------------------------------------------
