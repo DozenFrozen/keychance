@@ -43,8 +43,9 @@ class OutOfPoints(Exception):
 
 
 class WCL:
-    def __init__(self, client_id, client_secret, no_wait=False):
+    def __init__(self, client_id, client_secret, no_wait=False, max_minutes=None):
         self.no_wait = no_wait
+        self.deadline = time.time() + max_minutes * 60 if max_minutes else None
         self.requests = 0
         self.token = self._token(client_id, client_secret)
 
@@ -58,6 +59,9 @@ class WCL:
             return json.load(resp)["access_token"]
 
     def query(self, q, variables=None):
+        if self.deadline and time.time() > self.deadline:
+            print("Время запуска истекло — сохраняю, следующий запуск продолжит")
+            raise OutOfPoints()
         body = json.dumps({"query": q, "variables": variables or {}}).encode()
         for attempt in range(5):
             req = urllib.request.Request(API_URL, data=body, headers={
@@ -354,12 +358,13 @@ def main():
     ap.add_argument("--refresh-days", type=float, default=7, help="через сколько дней перекачивать рейтинг")
     ap.add_argument("--no-wait", action="store_true",
                     help="не ждать сброса лимита, а сохраниться и выйти (для запуска на сервере по расписанию)")
+    ap.add_argument("--max-minutes", type=float, help="остановиться и сохраниться через столько минут")
     args = ap.parse_args()
 
     if not args.client_id or not args.client_secret:
         sys.exit("Нужны WCL_CLIENT_ID и WCL_CLIENT_SECRET (https://www.warcraftlogs.com/api/clients/)")
 
-    api = WCL(args.client_id, args.client_secret, no_wait=args.no_wait)
+    api = WCL(args.client_id, args.client_secret, no_wait=args.no_wait, max_minutes=args.max_minutes)
     zone = find_zone(api, args.zone)
     print(f"Зона: {zone['name']} (id {zone['id']}), данжей: {len(zone['encounters'])}")
     br = zone.get("brackets") or {}
@@ -412,8 +417,8 @@ def main():
                     if cache[ck] and "bracket_offset" not in cache:
                         cache["bracket_offset"] = cache[ck]["l"] - bracket
                 if fetched:
-                    levels = sorted({cache[f"{c}:{f}"]["l"] for c, f in keys if cache.get(f"{c}:{f}")})
-                    shown = "/".join(f"+{l}" for l in levels) or f"+{level}"
+                    got = sorted({cache[f"{c}:{f}"]["l"] for c, f in keys if cache.get(f"{c}:{f}")})
+                    shown = "/".join(f"+{l}" for l in got) or f"+{level}"
                     print(f"  {enc['name']} {shown}: {len(keys)} забегов (новых {fetched})")
     except OutOfPoints:
         complete = False
