@@ -72,6 +72,9 @@ class WCL:
                     data = json.load(resp)
             except urllib.error.HTTPError as e:
                 if e.code == 429:
+                    # на сервере не ждём: иначе сгорает время запуска, а забеги помечаются пропущенными
+                    if self.no_wait or (self.deadline and time.time() + 60 > self.deadline):
+                        raise OutOfPoints()
                     print("  лимит запросов, жду 60 с...")
                     time.sleep(60)
                     continue
