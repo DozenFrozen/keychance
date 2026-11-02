@@ -2796,6 +2796,30 @@ KC.Data = {
                     s = {"DeathKnight-Blood", "Shaman-Restoration", "Warrior-Fury", "Priest-Shadow", "Rogue-Subtlety"},
                     k = {426.6, 947.2, 1395.7},
                 },
+                {
+                    l = 16,
+                    t = 1396.2,
+                    b = 2,
+                    d = 1065507,
+                    s = {"DeathKnight-Blood", "Shaman-Restoration", "Warrior-Arms", "DeathKnight-Unholy", "Mage-Arcane"},
+                    k = {367.7, 947.3, 1396.0},
+                },
+                {
+                    l = 16,
+                    t = 1396.6,
+                    b = 2,
+                    d = 1068479,
+                    s = {"Druid-Guardian", "Paladin-Holy", "Druid-Balance", "Mage-Arcane", "Warlock-Demonology"},
+                    k = {411.6, 960.4, 1396.2},
+                },
+                {
+                    l = 16,
+                    t = 1420.9,
+                    b = 2,
+                    d = 1073600,
+                    s = {"DeathKnight-Blood", "Shaman-Restoration", "Warlock-Demonology", "Mage-Arcane", "Warrior-Fury"},
+                    k = {516.0, 975.2, 1420.7},
+                },
             },
         },
         [1762] = {
@@ -4002,6 +4026,22 @@ KC.Data = {
                     d = 842164,
                     s = {"Druid-Guardian", "Paladin-Holy", "Warlock-Demonology", "Mage-Arcane", "DeathKnight-Frost"},
                     k = {302.9, 816.9, 1165.0, 1411.9},
+                },
+                {
+                    l = 16,
+                    t = 1276.5,
+                    b = 2,
+                    d = 995669,
+                    s = {"Druid-Guardian", "Monk-Mistweaver", "DemonHunter-Havoc", "Warlock-Demonology", "Hunter-Survival"},
+                    k = {301.6, 752.8, 1047.3, 1276.1},
+                },
+                {
+                    l = 16,
+                    t = 1280.0,
+                    b = 2,
+                    d = 981655,
+                    s = {"DemonHunter-Vengeance", "Paladin-Holy", "Shaman-Elemental", "Mage-Arcane", "Warlock-Demonology"},
+                    k = {309.5, 754.1, 1046.8, 1279.6},
                 },
             },
         },
@@ -11021,39 +11061,43 @@ KC.Data = {
             },
         },
         [16] = {
-            runs = 47,
+            runs = 52,
             specs = {
                 ["DeathKnight-Blood"] = {
-                    n = 15,
-                    dps = 188369,
+                    n = 17,
+                    dps = 187688,
                 },
                 ["DeathKnight-Frost"] = {
                     n = 3,
                     dps = 398338,
                 },
                 ["DeathKnight-Unholy"] = {
-                    n = 1,
-                    dps = 323060,
+                    n = 2,
+                    dps = 290426,
                 },
                 ["DemonHunter-Devourer"] = {
                     n = 5,
                     dps = 333261,
                 },
                 ["DemonHunter-Havoc"] = {
-                    n = 1,
-                    dps = 349527,
+                    n = 2,
+                    dps = 300355,
                 },
                 ["DemonHunter-Vengeance"] = {
-                    n = 2,
-                    dps = 179255,
+                    n = 3,
+                    dps = 170116,
+                },
+                ["Druid-Balance"] = {
+                    n = 1,
+                    dps = 308664,
                 },
                 ["Druid-Feral"] = {
                     n = 2,
                     dps = 379695,
                 },
                 ["Druid-Guardian"] = {
-                    n = 17,
-                    dps = 180990,
+                    n = 19,
+                    dps = 175546,
                 },
                 ["Druid-Restoration"] = {
                     n = 3,
@@ -11080,12 +11124,12 @@ KC.Data = {
                     dps = 323902,
                 },
                 ["Hunter-Survival"] = {
-                    n = 2,
-                    dps = 304220,
+                    n = 3,
+                    dps = 294803,
                 },
                 ["Mage-Arcane"] = {
-                    n = 17,
-                    dps = 324351,
+                    n = 21,
+                    dps = 314844,
                 },
                 ["Mage-Fire"] = {
                     n = 1,
@@ -11096,16 +11140,16 @@ KC.Data = {
                     dps = 162990,
                 },
                 ["Monk-Mistweaver"] = {
-                    n = 3,
-                    dps = 58191,
+                    n = 4,
+                    dps = 56252,
                 },
                 ["Monk-Windwalker"] = {
                     n = 4,
                     dps = 346786,
                 },
                 ["Paladin-Holy"] = {
-                    n = 16,
-                    dps = 53627,
+                    n = 18,
+                    dps = 51846,
                 },
                 ["Paladin-Protection"] = {
                     n = 9,
@@ -11140,32 +11184,32 @@ KC.Data = {
                     dps = 388723,
                 },
                 ["Shaman-Elemental"] = {
-                    n = 15,
-                    dps = 339433,
+                    n = 16,
+                    dps = 334489,
                 },
                 ["Shaman-Enhancement"] = {
                     n = 4,
                     dps = 331850,
                 },
                 ["Shaman-Restoration"] = {
-                    n = 16,
-                    dps = 46925,
+                    n = 18,
+                    dps = 48385,
                 },
                 ["Warlock-Affliction"] = {
                     n = 1,
                     dps = 391455,
                 },
                 ["Warlock-Demonology"] = {
-                    n = 11,
-                    dps = 388185,
+                    n = 15,
+                    dps = 361021,
                 },
                 ["Warrior-Arms"] = {
-                    n = 19,
-                    dps = 328815,
+                    n = 20,
+                    dps = 326174,
                 },
                 ["Warrior-Fury"] = {
-                    n = 4,
-                    dps = 315566,
+                    n = 5,
+                    dps = 310573,
                 },
                 ["Warrior-Protection"] = {
                     n = 2,
