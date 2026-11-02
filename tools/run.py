@@ -69,6 +69,67 @@ def find_addons_dir(settings):
         print("Такой папки нет, попробуйте ещё раз:")
 
 
+def gh_exe():
+    return shutil.which("gh") or r"C:\Program Files\GitHub CLI\gh.exe"
+
+
+def print_stats():
+    """Статистика по KeyChance/Data.lua: сколько забегов на каждом уровне ключа и в каждом данже."""
+    import re
+    from collections import Counter
+    path = os.path.join(ROOT, "KeyChance", "Data.lua")
+    if not os.path.exists(path):
+        print("Файл данных не найден")
+        return
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    text = text.split("\n    meta = {")[0]  # дальше идёт сводка по спекам, не забеги
+
+    generated = re.search(r'generated = "([^"]+)"', text)
+    starts = [(m.start(), m.group(1)) for m in re.finditer(r'\[\d+\] = \{\s+name = "([^"]+)"', text)]
+    per_level, per_dungeon = Counter(), {}
+    for i, (pos, name) in enumerate(starts):
+        block = text[pos:starts[i + 1][0] if i + 1 < len(starts) else len(text)]
+        levels = [int(x) for x in re.findall(r"\bl = (\d+),", block)]
+        per_dungeon[name] = len(levels)
+        per_level.update(levels)
+
+    total = sum(per_level.values())
+    print("\n================ БАЗА ЗАБЕГОВ ================")
+    print(f"Данные от: {generated.group(1) if generated else '?'}    Всего забегов: {total}\n")
+    top = max(per_level.values(), default=1)
+    print(" Ключ  Забегов")
+    for level in range(2, 31):
+        n = per_level.get(level, 0)
+        bar = "█" * round(20 * n / top) if n else ""
+        print(f"  +{level:<3} {n:>5}  {bar if n else '— ещё не скачано'}")
+    print("\n Данж                       Забегов")
+    for name, n in sorted(per_dungeon.items(), key=lambda x: -x[1]):
+        print(f"  {name:<26} {n:>5}")
+
+
+def print_server_status(repo):
+    """Последний запуск сервера (GitHub Actions)."""
+    import subprocess
+    from datetime import datetime, timezone
+    r = subprocess.run([gh_exe(), "run", "list", "-R", repo, "--limit", "1",
+                        "--json", "status,conclusion,createdAt"], capture_output=True, text=True)
+    if r.returncode != 0 or not r.stdout.strip().startswith("["):
+        return
+    runs = json.loads(r.stdout)
+    if not runs:
+        return
+    run = runs[0]
+    started = datetime.fromisoformat(run["createdAt"].replace("Z", "+00:00"))
+    minutes = int((datetime.now(timezone.utc) - started).total_seconds() // 60)
+    ago = f"{minutes} мин назад" if minutes < 120 else f"{minutes // 60} ч назад"
+    if run["status"] != "completed":
+        state = "идёт прямо сейчас"
+    else:
+        state = {"success": "успешно", "cancelled": "прерван", "failure": "ОШИБКА"}.get(run["conclusion"], run["conclusion"])
+    print(f"\nСервер: последний запуск {ago} — {state}")
+
+
 def main():
     print("==============================================")
     print("  KeyChance: загрузка данных с WarcraftLogs")
@@ -83,8 +144,7 @@ def main():
         s["addons_dir"] = addons
         save_settings(s)
         print("Скачиваю свежие данные с GitHub...")
-        gh = shutil.which("gh") or r"C:\Program Files\GitHub CLI\gh.exe"
-        r = subprocess.run([gh, "api", f"repos/{s['data_repo']}/contents/KeyChance/Data.lua",
+        r = subprocess.run([gh_exe(), "api", f"repos/{s['data_repo']}/contents/KeyChance/Data.lua",
                             "-H", "Accept: application/vnd.github.raw"], capture_output=True)
         if r.returncode != 0:
             raise RuntimeError(r.stderr.decode("utf-8", "replace").strip())
@@ -92,8 +152,9 @@ def main():
             fh.write(r.stdout)
         dest = os.path.join(addons, "KeyChance")
         shutil.copytree(os.path.join(ROOT, "KeyChance"), dest, dirs_exist_ok=True)
-        print(f"\nГОТОВО. Аддон обновлён: {dest}")
-        print("В игре напишите /reload")
+        print(f"Аддон обновлён: {dest}")
+        print_stats()
+        print_server_status(s["data_repo"])
         return
 
     if not s.get("client_id") or not s.get("client_secret"):
@@ -121,17 +182,25 @@ def main():
 
     dest = os.path.join(addons, "KeyChance")
     shutil.copytree(os.path.join(ROOT, "KeyChance"), dest, dirs_exist_ok=True)
-    print(f"\nГОТОВО. Аддон скопирован в: {dest}")
-    print("В игре напишите /reload, затем /kc")
+    print(f"Аддон скопирован в: {dest}")
+    print_stats()
 
 
 if __name__ == "__main__":
+    ok = False
     try:
         main()
+        ok = True
     except SystemExit as e:
-        if e.code not in (None, 0):
+        ok = e.code in (None, 0)
+        if not ok:
             print(f"\nОШИБКА: {e.code}")
     except Exception as e:
         print(f"\nОШИБКА: {e}")
-        print("Сделайте скриншот этого окна и пришлите его.")
+    print("\n==============================================")
+    if ok:
+        print("  ИТОГ: УСПЕШНО. В игре напишите /reload")
+    else:
+        print("  ИТОГ: НЕ УДАЛОСЬ. Сделайте скриншот окна и пришлите")
+    print("==============================================")
     input("\nНажмите Enter, чтобы закрыть окно...")
