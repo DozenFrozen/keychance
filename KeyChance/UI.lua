@@ -88,14 +88,18 @@ local function MetaLine(specs, level, res)
         #tiers < 5 and ("  |cff888888спеки: %d/5|r"):format(#tiers) or "")
 end
 
+local function SampleLine(res)
+    local lv = res.levelLo == res.levelHi and ("+" .. res.levelLo) or ("+%d..+%d"):format(res.levelLo, res.levelHi)
+    return ("|cff888888Статистика: %d забегов, %s|r"):format(res.samples, lv)
+end
+
 local function CommonLines(out, res, specs, level)
     out[#out + 1] = MetaLine(specs, level, res)
     out[#out + 1] = ("Средний финиш в тайм: %s"):format(FT(res.avgFinish))
     if res.compFinish then
         out[#out + 1] = ("Похожий состав (3+ спека): %s  |cff888888n=%d|r"):format(FT(res.compFinish), res.compN)
     end
-    local lv = res.levelLo == res.levelHi and ("+" .. res.levelLo) or ("+%d..+%d"):format(res.levelLo, res.levelHi)
-    out[#out + 1] = ("|cff888888Выборка: %d забегов, %s|r"):format(res.samples, lv)
+    out[#out + 1] = SampleLine(res)
 end
 
 local function BossLines(out, kills, bossAvg, bossCount)
@@ -182,6 +186,9 @@ function UI.ShowRun(run)
         out[#out + 1] = ("Прогноз: %s / %s  (%s%s|r)"):format(FT(res.projected), FT(run.timeLimit),
             margin >= 0 and "|cff40ff40запас " or "|cffff4040опоздание ", FT(math.abs(margin)))
         out[#out + 1] = ("Мобы: %.1f%%   Таймер: %s"):format(run.forces * 100, FT(run.elapsed))
+        if #run.kills == 0 and not run.groupDPS then
+            out[#out + 1] = "|cff888888Шанс уточняется: ждём данные об уроне и первого босса|r"
+        end
 
         BossLines(out, run.kills, res.bossAvg, run.bossCount)
         DamageLine(out, run.groupDPS, res)
@@ -201,15 +208,32 @@ function UI.ShowPreview(p)
         return
     end
     title:SetText(("Ваш ключ: %s +%d"):format(p.name or "?", p.level))
+    local res = p.result
     local out = {}
-    if p.result then
-        chance:SetText(("%sШанс тайма: ~%d%%|r"):format(ChanceColor(p.result.chance),
-            math.floor(p.result.chance * 100 + 0.5)))
-        out[#out + 1] = ("Ожидаемый финиш: %s / %s"):format(FT(p.result.projected), FT(p.timeLimit))
-        CommonLines(out, p.result, p.specs, p.level)
+
+    if not p.groupReady then
+        -- без полной группы считать нечего: только ключ и объём статистики
+        chance:SetText(("|cffffd040Соберите группу (%d/5)|r"):format(p.groupSize))
+        out[#out + 1] = "Прогноз появится, когда соберётся группа,"
+        out[#out + 1] = "а шанс тайма — после старта ключа."
+        out[#out + 1] = ("Лимит времени: %s"):format(FT(p.timeLimit))
+        if res then
+            out[#out + 1] = SampleLine(res)
+        else
+            out[#out + 1] = "|cff888888Нет статистики для этого данжа|r"
+        end
+    elseif not res then
+        chance:SetText("|cffffd040Группа собрана|r")
+        out[1] = "|cff888888Нет статистики для этого данжа|r"
     else
-        chance:SetText("|cff888888нет данных|r")
-        out[1] = "Нет статистики для этого данжа"
+        -- предварительный расчёт по составу; динамический шанс — только после старта
+        chance:SetText("|cffffd040Группа собрана — ждём старт|r")
+        out[#out + 1] = "Предварительно (до старта):"
+        out[#out + 1] = ("  Ожидаемый финиш: %s / %s"):format(FT(res.projected), FT(p.timeLimit))
+        out[#out + 1] = ("  |cff888888Ориентир шанса: ~%d%% (уточнится после старта)|r"):format(
+            math.floor(res.chance * 100 + 0.5))
+        BossLines(out, {}, res.bossAvg, #res.bossAvg)
+        CommonLines(out, res, p.specs, p.level)
     end
     lines:SetText(table.concat(out, "\n"))
     Layout()
