@@ -1,7 +1,9 @@
 local ADDON, KC = ...
 
 local DEFAULTS = {
-    bias = 0.06,      -- обычная группа ~6% медленнее топ-логов WCL; подстройте под себя: /kc bias 0.03
+    -- стартовая поправка: обычная группа ~10% медленнее базы WCL. Дальше аддон сам подстраивает её
+    -- по вашим завершённым ключам; вручную: /kc bias 0.05
+    bias = 0.10,
     locked = false,
     shown = true,
 }
@@ -156,6 +158,7 @@ local function FinishRun()
             groupDPS = dmg and dmg > 0 and dmg / t or run.groupDPS,
             result = run.result, startChance = run.startChance, chanceAt = run.chanceAt or {},
         }
+        KC.Model.ResetPersonal()
         print(("|cff33ff99KeyChance|r: %s +%d — %s за %s"):format(run.name or "?", run.level,
             onTime and "|cff00ff00в тайм|r" or "|cffff4040не в тайм|r", KC.FormatTime(t)))
     end
@@ -244,6 +247,7 @@ frame:SetScript("OnEvent", function(_, event, arg1)
         for k, v in pairs(DEFAULTS) do
             if KC.db[k] == nil then KC.db[k] = v end
         end
+        if KC.db.bias == 0.06 then KC.db.bias = DEFAULTS.bias end -- старое значение по умолчанию
         KC.db.history = KC.db.history or {}
         KC.db.cmToInstance = KC.db.cmToInstance or {}
         KC.UI.Init()
