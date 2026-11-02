@@ -14,6 +14,8 @@ local DPS_ALPHA    = 0.5    -- доля времени ключа, котора�
 local META_BETA    = 0.08   -- влияние "меты" состава на темп
 local KAPPA        = 0.2    -- как быстро наблюдаемый темп вытесняет априорную оценку
 local LOCAL_WEIGHT = 2.0    -- свои забеги весят больше (в них есть и проваленные ключи)
+local PERSONAL_K   = 3      -- сколько "виртуальных" ключей весит значение по умолчанию при подстройке под историю
+local PERSONAL_CAP = 0.6    -- ограничение поправки: не больше чем в ~1.8 раза медленнее/быстрее базы
 
 -- Нормальная функция распределения (аппроксимация Абрамовица–Стиган для erf).
 local function Phi(z)
@@ -106,7 +108,8 @@ function Model.GetRefs(instanceID, level, specs)
             local d = abs((r.l or level) - level)
             if r.t and r.t > 0 and d <= maxD then
                 local sim = Model.Similarity(specs, r.s)
-                refs[#refs + 1] = { run = r, w = baseW * 0.5 ^ d * (1 + 1.5 * sim), sim = sim }
+                refs[#refs + 1] = { run = r, w = baseW * 0.5 ^ d * (1 + 1.5 * sim), sim = sim,
+                    isLocal = baseW == LOCAL_WEIGHT }
             end
         end
     end
@@ -120,6 +123,39 @@ function Model.GetRefs(instanceID, level, specs)
         if #refs >= 15 then break end
     end
     return refs, dungeon
+end
+
+-- Насколько ваши группы медленнее (>0) или быстрее (<0) базы WCL, в ln-единицах темпа.
+-- Каждый ваш завершённый ключ сравнивается с медианой базы по тому же данжу (с поправкой на уровень);
+-- результат сглаживается к значению по умолчанию, пока ключей мало.
+local personalCache
+function Model.PersonalBias(default)
+    if personalCache and personalCache.default == default then return personalCache.bias, personalCache.n end
+    local sum, n = 0, 0
+    for instanceID, runs in pairs(KC.db and KC.db.history or {}) do
+        local dungeon = KC.Data.dungeons and KC.Data.dungeons[instanceID]
+        for _, mine in ipairs(runs) do
+            local refT = {}
+            for _, r in ipairs(dungeon and dungeon.runs or {}) do
+                if r.t and r.l and abs(r.l - mine.l) <= 2 then
+                    refT[#refT + 1] = r.t * exp(LEVEL_STEP * (mine.l - r.l))
+                end
+            end
+            if #refT >= 5 and mine.t and mine.t > 0 then
+                table.sort(refT)
+                local median = refT[math.floor(#refT / 2) + 1]
+                sum, n = sum + max(-PERSONAL_CAP, min(PERSONAL_CAP, log(mine.t / median))), n + 1
+            end
+        end
+    end
+    local bias = (sum + PERSONAL_K * default) / (n + PERSONAL_K)
+    personalCache = { default = default, bias = bias, n = n }
+    return bias, n
+end
+
+-- Сбрасывается после каждого завершённого ключа.
+function Model.ResetPersonal()
+    personalCache = nil
 end
 
 local function WeightedMedian(values)
@@ -152,7 +188,7 @@ function Model.Estimate(state)
     local k = #kills
     local bossCount = state.bossCount or (dungeon and dungeon.bossCount) or 0
     local forces = state.forces or 0
-    local bias = state.bias or 0
+    local bias, personalN = Model.PersonalBias(state.bias or 0)
     local myMeta = Model.MetaScore(state.specs, level)
     local dpsTrust = state.groupDPS and min(1, elapsed / 300) or 0
     local lastT = k > 0 and kills[k] or 0
@@ -171,7 +207,8 @@ function Model.Estimate(state)
         local rk = r.k or {}
 
         -- априорный темп: смещение логов + разница уровней + мета + урон
-        local mu = bias + LEVEL_STEP * (level - (r.l or level))
+        -- поправка "база WCL -> ваши группы" нужна только эталонам из WCL: свои забеги уже в вашем темпе
+        local mu = (ref.isLocal and 0 or bias) + LEVEL_STEP * (level - (r.l or level))
         if myMeta and r.s then
             local refMeta = Model.MetaScore(r.s, level)
             if refMeta then mu = mu - META_BETA * (myMeta - refMeta) end
@@ -242,6 +279,8 @@ function Model.Estimate(state)
         compN = compN,
         avgDPS = dpsW > 0 and dpsSum / dpsW or nil,
         samples = #refs,
+        personalBias = bias,
+        personalN = personalN,
         meta = myMeta,
         bossAvg = {},
     }
