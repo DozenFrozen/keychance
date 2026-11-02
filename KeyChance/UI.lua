@@ -90,7 +90,14 @@ end
 
 local function SampleLine(res)
     local lv = res.levelLo == res.levelHi and ("+" .. res.levelLo) or ("+%d..+%d"):format(res.levelLo, res.levelHi)
-    return ("|cff888888Статистика: %d забегов, %s|r"):format(res.samples, lv)
+    local text = ("|cff888888Статистика: %d забегов, %s"):format(res.samples, lv)
+    if res.personalBias then
+        local pct = math.floor((math.exp(res.personalBias) - 1) * 100 + 0.5)
+        local pace = pct >= 0 and ("медленнее базы на %d%%"):format(pct) or ("быстрее базы на %d%%"):format(-pct)
+        text = text .. ("\nВаш темп: %s (%s)"):format(pace,
+            res.personalN > 0 and ("по %d ваш. ключам"):format(res.personalN) or "пока по умолчанию")
+    end
+    return text .. "|r"
 end
 
 local function CommonLines(out, res, specs, level)
