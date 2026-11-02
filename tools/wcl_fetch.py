@@ -152,36 +152,67 @@ REPORT_Q = """query($code: String!, $fights: [Int]!) {
 _debug_printed = False
 
 
+PER_PAGE = 8                                   # сколько забегов брать с одной страницы рейтинга
+PAGE_SCHEDULE = [1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120]
+
+
+def next_page(entry):
+    """Следующая страница рейтинга: сначала всё глубже по расписанию (топ → средние → медленные группы),
+    а когда известен конец рейтинга — заполняем самые большие промежутки между уже взятыми страницами."""
+    visited, last = set(entry["visited"]), entry.get("last")
+    for p in PAGE_SCHEDULE:
+        if p not in visited and (last is None or p <= last):
+            return p
+    if last is None:
+        return max(visited) + 15  # рейтинг длиннее расписания — идём ещё глубже
+    free = [p for p in range(1, last + 1) if p not in visited]
+    return max(free, key=lambda p: min(abs(p - v) for v in visited)) if free else None
+
+
 def ranked_runs(api, encounter_id, level, want, region, entry=None):
-    """Дополняет запись рейтинга из кэша до want уникальных забегов (код отчёта, id боя),
-    продолжая листать страницы с того места, где остановились в прошлый раз.
-    Запись: {"t": когда начали, "keys": [...], "page": последняя страница, "done": страниц больше нет}."""
+    """Дополняет запись рейтинга из кэша до want уникальных забегов (код отчёта, id боя).
+    Чтобы выборка была не только из топ-групп, берём по PER_PAGE забегов со страниц по всей глубине рейтинга.
+    Запись: {"t": когда начали, "keys": [...], "visited": [страницы], "last": последняя существующая страница,
+    "done": больше брать нечего}."""
     global _debug_printed
-    entry = entry or {"t": time.time(), "keys": [], "page": 0, "done": False}
+    entry = entry or {"t": time.time(), "keys": [], "visited": [], "done": False}
+    if "visited" not in entry:
+        # старый формат: страницы листались подряд и в выборке одни топ-группы —
+        # оставляем лучших с первой страницы, остальное доберём с глубоких страниц
+        entry["keys"] = entry["keys"][:PER_PAGE]
+        entry["visited"] = [1]
+        entry["done"] = False
     seen = [tuple(k) for k in entry["keys"]]
-    page = entry.get("page", 1) + 1
-    empty_pages = 0
     while len(seen) < want and not entry.get("done"):
+        page = next_page(entry)
+        if page is None:
+            entry["done"] = True
+            break
         data = api.query(RANKINGS_Q, {"id": encounter_id, "bracket": level, "page": page, "region": region})
         rk = data["worldData"]["encounter"]["characterRankings"] or {}
         if isinstance(rk, str):
             rk = json.loads(rk)
         rankings = rk.get("rankings") or []
-        before = len(seen)
+        entry["visited"].append(page)
+        if not rankings:
+            # перелетели за конец рейтинга: дальше берём страницы только до этой
+            entry["last"] = min(entry.get("last") or page, page - 1)
+            continue
+        if not rk.get("hasMorePages"):
+            entry["last"] = page
+        added = 0
         for r in rankings:
             rep = r.get("report") or {}
             key = (rep.get("code"), rep.get("fightID"))
             if key[0] and key[1] is not None and key not in seen:
                 seen.append(key)
-        if rankings and len(seen) == before and not _debug_printed:
+                added += 1
+                if added >= PER_PAGE:
+                    break
+        if rankings and not added and not _debug_printed:
             _debug_printed = True
             print("  [отладка] не понял формат рейтинга, первая запись:",
                   json.dumps(rankings[0], ensure_ascii=False)[:600])
-        entry["page"] = page
-        empty_pages = empty_pages + 1 if len(seen) == before else 0
-        if not rk.get("hasMorePages") or empty_pages >= 2:
-            entry["done"] = True
-        page += 1
     entry["keys"] = seen
     return entry
 
@@ -394,8 +425,10 @@ def main():
                 bracket = level - cache.get("bracket_offset", 0)
                 rk_key = f"rk:{enc['id']}:{bracket}:{args.region}"
                 entry = cache.get(rk_key)
-                if isinstance(entry, list):  # старый формат кэша — считаем скачанным только что
+                if isinstance(entry, list):  # самый старый формат кэша — просто список
                     entry = cache[rk_key] = {"t": time.time(), "keys": entry}
+                if entry and "visited" not in entry:  # переходим на выборку по всей глубине рейтинга
+                    entry = cache[rk_key] = ranked_runs(api, enc["id"], bracket, 0, args.region, entry)
                 if entry and time.time() - entry["t"] >= args.refresh_days * 86400:
                     entry = None  # рейтинг устарел — начинаем листать заново
                 if not entry or (len(entry["keys"]) < tier and not entry.get("done")):
