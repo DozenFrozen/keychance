@@ -11,7 +11,15 @@ local SIGMA_PRIOR  = 0.13   -- разброс темпа до старта (пр
 local SIGMA_FLOOR  = 0.03
 local LEVEL_STEP   = 0.045  -- насколько медленнее каждый +1 уровень ключа относительно эталона
 local DPS_ALPHA    = 0.5    -- доля времени ключа, которая масштабируется уроном (остальное — пулы, бег, механики)
+local BOSS_DPS_W   = 0.5    -- вес сравнения урона по боссам (точнее общего урона: на треше много бега и простоя)
+local INT_BETA     = 0.05   -- влияние частоты сбитых заклинаний (мало киков -> больше смертей и вайпов)
+local INT_CAP      = 0.08
 local META_BETA    = 0.08   -- влияние "меты" состава на темп
+-- Смерти: штраф за уже случившиеся смерти уже сидит в таймере, а будущие оцениваются по темпу смертей группы.
+-- Эталонные забеги тоже умирали, поэтому учитываем только разницу: "мы умираем чаще/реже эталона".
+local DEATH_PENALTY    = 15        -- секунд за смерть, если игра не сказала точнее
+local DEATH_PRIOR_RATE = 1 / 300   -- смертей в секунду у эталона без данных о смертях (~6 за 30 минут)
+local DEATH_PRIOR_SEC  = 600       -- вес априорного темпа смертей: столько секунд "виртуального" ключа
 local KAPPA        = 0.2    -- как быстро наблюдаемый темп вытесняет априорную оценку
 local LOCAL_WEIGHT = 2.0    -- свои забеги весят больше (в них есть и проваленные ключи)
 local PERSONAL_K   = 3      -- сколько "виртуальных" ключей весит значение по умолчанию при подстройке под историю
@@ -174,9 +182,42 @@ state = {
     instanceID, level, timeLimit (сек),
     elapsed (сек), kills = { время 1-го убитого босса, 2-го, ... },
     bossCount, forces (0..1), specs = { "Mage-Fire", ... }, groupDPS (может быть nil),
+    bossDPS = { урон группы в секунду на 1-м убитом боссе, ... } (может быть пустым),
+    interrupts (сбито заклинаний с начала ключа, может быть nil),
+    encounter = { elapsed = сек боя с боссом, hp = доля HP босса 0..1 или nil } — только во время боя,
+    deaths (смертей с начала ключа), deathPenalty (секунд штрафа за смерть),
     bias (поправка: насколько обычная группа медленнее залогированных тайм-забегов)
 }
 ]]
+
+local function Clamp(v, cap)
+    return max(-cap, min(cap, v))
+end
+
+-- Сколько ещё (в наших секундах) продлится идущий бой с боссом и относительная неопределённость этой оценки.
+-- expected — ожидаемая длительность всего боя. По HP босса оценка тем точнее, чем больше уже снято:
+-- при 5% HP за 2 минуты боя осталось ~6 секунд, а не "средний бой минус прошедшее".
+local function FightRemaining(enc, expected)
+    local done = enc.elapsed
+    local byTime = max(expected - done, 0.15 * expected)
+    local hp = enc.hp
+    if hp and hp < 0.98 and done >= 5 then
+        local byHP = done * hp / (1 - hp)
+        local w = min(1, (1 - hp) * 1.5)
+        return w * byHP + (1 - w) * byTime, 0.1 + 0.3 * hp
+    end
+    return byTime, done > expected and 0.5 or 0.35
+end
+
+-- Средний ln(наш урон / урон эталона) по боссам, где известны оба значения.
+local function BossDPSRatio(mine, ref)
+    if not mine or not ref then return end
+    local sum, n = 0, 0
+    for i, v in pairs(mine) do
+        if v and v > 0 and ref[i] and ref[i] > 0 then sum, n = sum + log(v / ref[i]), n + 1 end
+    end
+    return n > 0 and sum / n or nil
+end
 function Model.Estimate(state)
     local level = state.level or 0
     local refs, dungeon = Model.GetRefs(state.instanceID, level, state.specs)
@@ -199,7 +240,28 @@ function Model.Estimate(state)
     local compT, compW, compN = 0, 0, 0
     local allT, allW = 0, 0
     local dpsSum, dpsW = 0, 0
+    local fightAvg, fightW = {}, {}
+    local bdAvg, bdW = {}, {}
+    local intSum, intW = 0, 0
+    local intRate = state.interrupts and elapsed >= 300 and state.interrupts / elapsed
     local levels = {}
+    local fightRems = {}
+    local deaths = state.deaths or 0
+    local penalty = state.deathPenalty or DEATH_PENALTY
+    local deathSum, deathW = 0, 0
+    local futureDeaths = {}
+
+    -- идёт бой с боссом k+1: средняя длительность этого боя у эталонов (для тех, где она не записана)
+    local enc = state.encounter
+    local fightRef
+    if enc then
+        local sum, wsum = 0, 0
+        for _, ref in ipairs(refs) do
+            local bt = ref.run.bt and ref.run.bt[k + 1]
+            if bt then sum, wsum = sum + ref.w * bt, wsum + ref.w end
+        end
+        fightRef = wsum > 0 and sum / wsum or nil
+    end
 
     for _, ref in ipairs(refs) do
         local r, w = ref.run, ref.w
@@ -214,8 +276,14 @@ function Model.Estimate(state)
             if refMeta then mu = mu - META_BETA * (myMeta - refMeta) end
         end
         if dpsTrust > 0 and r.d and r.d > 0 then
-            local term = -DPS_ALPHA * log(state.groupDPS / r.d)
-            mu = mu + dpsTrust * max(-0.4, min(0.4, term))
+            mu = mu + dpsTrust * Clamp(-DPS_ALPHA * log(state.groupDPS / r.d), 0.4)
+        end
+        local bossRatio = BossDPSRatio(state.bossDPS, r.bp)
+        if bossRatio then
+            mu = mu + BOSS_DPS_W * Clamp(-DPS_ALPHA * bossRatio, 0.4)
+        end
+        if intRate and r.i and r.t then
+            mu = mu + Clamp(-INT_BETA * log((intRate + 0.01) / (r.i / r.t + 0.01)), INT_CAP)
         end
 
         -- наблюдаемый темп по последнему убитому боссу
@@ -229,30 +297,55 @@ function Model.Estimate(state)
         local s = max(SIGMA_FLOOR, SIGMA_PRIOR * sqrt(1 - min(phi, 0.95)) * (1 - 0.5 * lambda))
         local rate = exp(m)
 
-        -- сколько "эталонного" времени осталось с текущего момента
-        local refRem
+        -- сколько времени осталось с текущего момента: refRem — в "эталонных" секундах,
+        -- realRem — сразу в наших (во время боя с боссом, где темп виден по самому бою)
+        local refRem, realRem, realS
+        local nextKill = rk[k + 1] or T
         if bossCount > 0 and k >= bossCount then
             refRem = forces >= 1 and 0 or (1 - forces) * T * 0.9
             s = max(s, 0.25)
+        elseif enc then
+            local fightRem, sF = FightRemaining(enc, rate * ((r.bt and r.bt[k + 1]) or fightRef or 0.08 * T))
+            local after = max(0, T - nextKill)
+            if k + 1 >= bossCount and forces < 1 then after = after + (1 - forces) * T * 0.9 end
+            local rest = rate * after
+            realRem = fightRem + rest
+            realS = max(SIGMA_FLOOR, sqrt((fightRem * sF) ^ 2 + (rest * s) ^ 2) / max(realRem, 1))
+            fightRems[#fightRems + 1] = { v = fightRem, w = w }
         else
-            local nextKill = rk[k + 1] or T
+            -- даже если отрезок до босса затянулся, впереди ещё сам бой с ним
             local spent = (elapsed - lastT) / rate
-            refRem = max((T - refLast) - spent, (T - nextKill) + 0.15 * (nextKill - refLast))
+            local nextFight = (r.bt and r.bt[k + 1]) or 0.25 * (nextKill - refLast)
+            refRem = max((T - refLast) - spent, (T - nextKill) + max(0.6 * nextFight, 0.05 * (nextKill - refLast)))
         end
 
+        -- будущие смерти: наш темп смертей (сглаженный к темпу эталона, пока ключ короткий) против эталонного;
+        -- лишние смерти съедают бюджет времени штрафами
+        local remaining = realRem or rate * max(refRem, 0)
+        local refDeathRate = r.dd and T > 0 and r.dd / T or DEATH_PRIOR_RATE
+        local myDeathRate = (deaths + refDeathRate * DEATH_PRIOR_SEC) / (elapsed + DEATH_PRIOR_SEC)
+        local extra = max(-0.05 * remaining, min(0.5 * remaining,
+            (myDeathRate - refDeathRate) * remaining * penalty))
+        futureDeaths[#futureDeaths + 1] = { v = myDeathRate * remaining, w = w }
+
         local budget = limit - elapsed
+        local net = budget - extra
         local p
         if budget <= 0 then
             p = 0
-        elseif refRem <= 0 then
+        elseif (realRem or refRem) <= 0 then
             p = 1
+        elseif net <= 0 then
+            p = 0
+        elseif realRem then
+            p = Phi(log(net / realRem) / realS)
         else
-            -- успеваем, если реальный темп не хуже необходимого: ln(budget/refRem) >= ln(r)
-            p = Phi((log(budget / refRem) - m) / s)
+            -- успеваем, если реальный темп не хуже необходимого: ln(net/refRem) >= ln(r)
+            p = Phi((log(net / refRem) - m) / s)
         end
 
         sumW, sumP = sumW + w, sumP + w * p
-        projections[#projections + 1] = { v = elapsed + rate * max(refRem, 0), w = w }
+        projections[#projections + 1] = { v = elapsed + remaining + extra, w = w }
         finish[#finish + 1] = { v = T, w = w }
 
         -- средние времена считаем только по тайм-забегам (в своей истории бывают и проваленные)
@@ -261,12 +354,26 @@ function Model.Estimate(state)
                 bossAvg[i] = (bossAvg[i] or 0) + w * t
                 bossW[i] = (bossW[i] or 0) + w
             end
+            for i, t in ipairs(r.bt or {}) do
+                fightAvg[i] = (fightAvg[i] or 0) + w * t
+                fightW[i] = (fightW[i] or 0) + w
+            end
+            if r.i then intSum, intW = intSum + w * r.i, intW + w end
+            if r.dd then deathSum, deathW = deathSum + w * r.dd, deathW + w end
             if ref.sim >= 0.6 then
                 compT, compW, compN = compT + w * T, compW + w, compN + 1
             end
             allT, allW = allT + w * T, allW + w
         end
-        if r.d and (r.l or level) == level then dpsSum, dpsW = dpsSum + w * r.d, dpsW + w end
+        if (r.l or level) == level then
+            if r.d then dpsSum, dpsW = dpsSum + w * r.d, dpsW + w end
+            for i, v in pairs(r.bp or {}) do
+                if v and v > 0 then
+                    bdAvg[i] = (bdAvg[i] or 0) + w * v
+                    bdW[i] = (bdW[i] or 0) + w
+                end
+            end
+        end
         levels[r.l or level] = true
     end
 
@@ -282,9 +389,18 @@ function Model.Estimate(state)
         personalBias = bias,
         personalN = personalN,
         meta = myMeta,
-        bossAvg = {},
+        avgInterrupts = intW > 0 and intSum / intW or nil,
+        fightRem = #fightRems > 0 and WeightedMedian(fightRems) or nil, -- сколько ещё бить текущего босса
+        avgDeaths = deathW > 0 and deathSum / deathW or nil,  -- смертей за ключ у тайм-забегов
+        futureDeaths = WeightedMedian(futureDeaths),          -- сколько ещё смертей ожидается до конца
+        deathPenalty = penalty,
+        bossAvg = {},       -- на какой секунде ключа убит i-й босс
+        bossFightAvg = {},  -- сколько длится бой с i-м боссом
+        bossDPSAvg = {},    -- урон группы в секунду на i-м боссе
     }
     for i, v in pairs(bossAvg) do res.bossAvg[i] = v / bossW[i] end
+    for i, v in pairs(fightAvg) do res.bossFightAvg[i] = v / fightW[i] end
+    for i, v in pairs(bdAvg) do res.bossDPSAvg[i] = v / bdW[i] end
     local lo, hi
     for l in pairs(levels) do
         lo, hi = min(lo or l, l), max(hi or l, l)

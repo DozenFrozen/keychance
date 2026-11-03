@@ -149,7 +149,16 @@ REPORT_Q = """query($code: String!, $fights: [Int]!) {
     }
     playerDetails(fightIDs: $fights)
     table(fightIDs: $fights, dataType: DamageDone)
+    interrupts: table(fightIDs: $fights, dataType: Interrupts)
+    deaths: table(fightIDs: $fights, dataType: Deaths)
   } } }"""
+
+NAMES_Q = """query($code: String!, $fights: [Int]!) {
+  reportData { report(code: $code) {
+    fights(fightIDs: $fights) { dungeonPulls { encounterID name kill } }
+  } } }"""
+
+RUN_VERSION = 3  # 2: + сбитые заклинания, длительность боёв с боссами и урон по боссам; 3: + смерти
 
 
 _debug_printed = False
@@ -226,6 +235,45 @@ def spec_key(cls, spec):
     return f"{cls.replace(' ', '')}-{spec.replace(' ', '')}"
 
 
+def group_damage(table):
+    """Суммарный урон игроков из таблицы DamageDone."""
+    return sum(e.get("total", 0) for e in (table or {}).get("data", {}).get("entries", []) or []
+               if e.get("type") in CLASSES)
+
+
+def count_interrupts(table):
+    """Сколько заклинаний сбила группа. Таблица Interrupts в WCL вложенная (заклинание -> игроки),
+    поэтому берём готовый счётчик spellsInterrupted, а если его нет — суммируем записи игроков на любой глубине."""
+    data = (table or {}).get("data", {})
+    entries = data.get("entries") or []
+    if entries and all(isinstance(e, dict) and "spellsInterrupted" in e for e in entries):
+        return int(sum(e["spellsInterrupted"] or 0 for e in entries))
+    total = 0
+
+    def walk(node):
+        nonlocal total
+        if isinstance(node, dict):
+            if node.get("type") in CLASSES and isinstance(node.get("total"), (int, float)):
+                total += node["total"]
+                return
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+
+    walk(entries)
+    return int(total) if total else None
+
+
+def count_deaths(table):
+    """Смерти игроков группы: в таблице Deaths одна запись на каждую смерть."""
+    entries = (table or {}).get("data", {}).get("entries")
+    if not isinstance(entries, list):
+        return None
+    return sum(1 for e in entries if isinstance(e, dict) and e.get("type") in CLASSES)
+
+
 def parse_run(report):
     fights = report.get("fights") or []
     if not fights:
@@ -237,10 +285,9 @@ def parse_run(report):
     total = f["keystoneTime"] / 1000.0
     raw = max((f["endTime"] - f["startTime"]) / 1000.0, 1.0)
     scale = total / raw  # переносим времена боссов на шкалу внутриигрового таймера (со штрафами)
-    kills = sorted(
-        (p["endTime"] - f["startTime"]) / 1000.0 * scale
-        for p in (f.get("dungeonPulls") or []) if p.get("encounterID") and p.get("kill")
-    )
+    boss_pulls = sorted((p for p in (f.get("dungeonPulls") or []) if p.get("encounterID") and p.get("kill")),
+                        key=lambda p: p["endTime"])
+    kills = [(p["endTime"] - f["startTime"]) / 1000.0 * scale for p in boss_pulls]
 
     specs = []
     pd = (report.get("playerDetails") or {}).get("data", {}).get("playerDetails", {})
@@ -273,7 +320,26 @@ def parse_run(report):
         "s": specs,
         "d": int(group_dmg / seconds) if seconds > 0 and group_dmg else None,
         "pd": [(k, int(v)) for k, v in player_dps],
+        "i": count_interrupts(report.get("interrupts")),
+        "dd": count_deaths(report.get("deaths")),
+        "bt": [round((p["endTime"] - p["startTime"]) / 1000.0, 1) for p in boss_pulls],
+        "v": RUN_VERSION,
+        "_pulls": [(p["startTime"], p["endTime"]) for p in boss_pulls],
     }
+
+
+def add_boss_damage(api, code, fid, run):
+    """Урон группы в секунду на каждом боссе: таблица DamageDone за время каждого убийства, одним запросом."""
+    pulls = run.pop("_pulls", [])
+    if not pulls:
+        return
+    parts = " ".join(
+        f"b{i}: table(fightIDs: [{fid}], dataType: DamageDone, startTime: {s}, endTime: {e})"
+        for i, (s, e) in enumerate(pulls))
+    rep = api.query(f"query($code: String!) {{ reportData {{ report(code: $code) {{ {parts} }} }} }}",
+                    {"code": code})["reportData"]["report"] or {}
+    run["bp"] = [int(group_damage(rep.get(f"b{i}")) / max((e - s) / 1000.0, 1.0)) or None
+                 for i, (s, e) in enumerate(pulls)]
 
 
 def to_lua(v, indent=0):
@@ -339,6 +405,33 @@ def rk_keys(entry):
     return [tuple(k) for k in keys]
 
 
+def fetch_boss_names(api, cache, encounters):
+    """Английские имена боссов: encounterID Blizzard (тот же, что в ENCOUNTER_START в игре) -> имя.
+    Нужны аддону для английского режима на неанглийском клиенте. Один отчёт на данж, результат кэшируется."""
+    names = cache.setdefault("boss_names", {})
+    for enc in encounters:
+        if cache.get(f"bn_done:{enc['id']}"):
+            continue
+        keys = [k for key, v in cache.items() if key.startswith(f"rk:{enc['id']}:") for k in rk_keys(v)]
+        for code, fid in keys[:3]:
+            try:
+                rep = api.query(NAMES_Q, {"code": code, "fights": [fid]})["reportData"]["report"] or {}
+            except RuntimeError as e:
+                print(f"    имена боссов {code}: {e}")
+                continue
+            found = 0
+            for f in rep.get("fights") or []:
+                for p in f.get("dungeonPulls") or []:
+                    if p.get("encounterID") and p.get("name") and p.get("kill"):
+                        names[str(p["encounterID"])] = p["name"]
+                        found += 1
+            if found:
+                cache[f"bn_done:{enc['id']}"] = True
+                print(f"  {enc['name']}: имена боссов ({found})")
+                break
+    return {int(k): v for k, v in names.items()}
+
+
 def build_data(zone, runs_by_dungeon):
     dungeons, meta = {}, defaultdict(lambda: {"runs": 0, "specs": defaultdict(lambda: [0, 0.0, 0])})
     for enc, info in runs_by_dungeon.items():
@@ -351,7 +444,8 @@ def build_data(zone, runs_by_dungeon):
             "name": info["name"],
             "encounter": enc,
             "bossCount": boss_count,
-            "runs": [{"l": r["l"], "t": r["t"], "b": r["b"], "d": r["d"], "s": r["s"], "k": r["k"]} for r in runs],
+            "runs": [{"l": r["l"], "t": r["t"], "b": r["b"], "d": r["d"], "s": r["s"], "k": r["k"],
+                      "i": r.get("i"), "dd": r.get("dd"), "bt": r.get("bt"), "bp": r.get("bp")} for r in runs],
         }
         for r in runs:
             m = meta[r["l"]]
@@ -393,6 +487,12 @@ def main():
     ap.add_argument("--no-wait", action="store_true",
                     help="не ждать сброса лимита, а сохраниться и выйти (для запуска на сервере по расписанию)")
     ap.add_argument("--max-minutes", type=float, help="остановиться и сохраниться через столько минут")
+    ap.add_argument("--no-boss-damage", action="store_true",
+                    help="не качать урон по боссам (экономит очки API: один запрос на забег вместо двух)")
+    ap.add_argument("--boss-names-only", action="store_true",
+                    help="только докачать английские имена боссов и дописать их в уже готовый --out (забеги не трогаются)")
+    ap.add_argument("--refetch-old", action="store_true",
+                    help="перекачать забеги из кэша, скачанные старой версией скрипта (без киков и данных боссов)")
     args = ap.parse_args()
 
     if not args.client_id or not args.client_secret:
@@ -416,9 +516,22 @@ def main():
 
     encounters = [e for e in zone["encounters"]
                   if not args.dungeon or any(d.lower() in e["name"].lower() for d in args.dungeon)]
+    if args.boss_names_only:
+        names = fetch_boss_names(api, cache, encounters)
+        save_cache()
+        with open(args.out, encoding="utf-8") as fh:
+            text = fh.read()
+        text = text.split("\nKC.Data.bossNames = ")[0].rstrip("\n")
+        with open(args.out, "w", encoding="utf-8") as fh:
+            fh.write(text + "\n\nKC.Data.bossNames = " + to_lua(names) + "\n")
+        print(f"Готово: {len(names)} имён боссов -> {os.path.abspath(args.out)}")
+        return
+
     tiers = [int(x) for x in str(args.runs).split(",")]
     complete = True
     try:
+        # имена боссов — в начале: на сервере запуск обычно обрывается лимитом API, до конца он не доходит
+        fetch_boss_names(api, cache, encounters)
         # волна за волной (25, 50, 100 забегов), внутри волны — уровень за уровнем по всем данжам:
         # так самые важные уровни получают первую порцию данных раньше всех
         for tier, level in ((t, l) for t in tiers for l in levels):
@@ -440,13 +553,23 @@ def main():
                 fetched = 0
                 for code, fid in keys:
                     ck = f"{code}:{fid}"
-                    if ck not in cache:
+                    outdated = args.refetch_old and cache.get(ck) and cache[ck].get("v", 1) < RUN_VERSION
+                    if ck not in cache or outdated:
                         try:
                             rep = api.query(REPORT_Q, {"code": code, "fights": [fid]})["reportData"]["report"]
-                            cache[ck] = parse_run(rep or {})
+                            run = parse_run(rep or {})
+                            if run and not args.no_boss_damage:
+                                try:
+                                    add_boss_damage(api, code, fid, run)
+                                except RuntimeError as e:
+                                    print(f"    урон по боссам {ck}: {e}")
+                            if run:
+                                run.pop("_pulls", None)
+                            cache[ck] = run
                         except RuntimeError as e:
                             print(f"    пропуск {ck}: {e}")
-                            cache[ck] = None
+                            if not outdated:  # старую версию забега оставляем как есть
+                                cache[ck] = None
                         fetched += 1
                         if fetched % 10 == 0:
                             save_cache()
@@ -467,6 +590,7 @@ def main():
 
     data = build_data(zone, collect_runs(zone, cache, levels, args.region, args.dungeon))
     data["complete"] = complete
+    data["bossNames"] = {int(k): v for k, v in cache.get("boss_names", {}).items()}
     with open(args.out, "w", encoding="utf-8") as fh:
         fh.write("-- Сгенерировано tools/wcl_fetch.py — не редактируйте вручную\n")
         fh.write("local _, KC = ...\n\nKC.Data = ")
