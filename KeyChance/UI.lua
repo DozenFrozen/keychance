@@ -182,12 +182,12 @@ local function BossLines(out, kills, bosses, res, bossCount)
         local row
         if mine and avg then
             local d = mine - avg
-            row = (L["  %d) %s  ср. %s  %s%s|r"]):format(i, FT(mine), FT(avg),
+            row = (L["  %d) %s  цель %s  %s%s|r"]):format(i, FT(mine), FT(avg),
                 d <= 0 and "|cff40ff40" or "|cffff4040", SignedTime(d))
         elseif mine then
             row = ("  %d) %s"):format(i, FT(mine))
         elseif avg then
-            row = (L["  %d) --:--  ср. %s"]):format(i, FT(avg))
+            row = (L["  %d) --:--  цель %s"]):format(i, FT(avg))
         end
         if row then
             if b and b.name then row = row .. ("  |cff888888%s|r"):format(KC.BossName(b.id, b.name)) end
@@ -197,7 +197,7 @@ local function BossLines(out, kills, bosses, res, bossCount)
         end
     end
     if #rows > 0 then
-        out[#out + 1] = L["Боссы (у тайм-забегов):"]
+        out[#out + 1] = L["Боссы (желаемое время убийства):"]
         for _, r in ipairs(rows) do out[#out + 1] = r end
     end
 end

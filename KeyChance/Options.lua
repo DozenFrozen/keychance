@@ -102,6 +102,15 @@ function Options.Init()
     Button(layout, L["Положение окна"], L["Сбросить"], function() KC.UI.ResetPosition() end, L["Вернуть окно на место по умолчанию"])
     Button(layout, L["Последний ключ"], L["График"], KC.Graph.ShowLatest, L["График шанса последнего ключа"])
 
+    -- демо-данные: случайный ключ из базы, чтобы посмотреть окно и настроить, какие строки показывать
+    Header(layout, L["Демо-данные"])
+    Button(layout, L["Итоги ключа"], L["Показать"], function() KC.SetDemo("summary") end,
+        L["Итоги случайного ключа из базы WCL. Галочки ниже сразу меняют окно"])
+    Button(layout, L["Ключ в процессе"], L["Показать"], function() KC.SetDemo("live") end,
+        L["Случайный момент случайного ключа из базы WCL — так окно выглядит во время прохождения"])
+    Button(layout, L["Выключить демо"], L["Выключить"], function() KC.SetDemo("off") end,
+        L["Вернуть окно к реальным данным"])
+
     for _, section in ipairs(ShowSections()) do
         Header(layout, section[1])
         for _, item in ipairs(section[2]) do

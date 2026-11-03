@@ -3,7 +3,7 @@
 ## Notes: Mythic+ chance to time the key, based on WarcraftLogs statistics
 ## Notes-ruRU: Шанс прохождения Мифик+ в тайм на основе статистики WarcraftLogs
 ## Author: DzF
-## Version: 1.2.0
+## Version: 1.2.1
 ## SavedVariables: KeyChanceDB
 ## IconTexture: Interface\Icons\INV_Relics_Hourglass
 ## AddonCompartmentFunc: KeyChance_OnAddonCompartmentClick

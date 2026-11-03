@@ -186,6 +186,7 @@ state = {
     interrupts (сбито заклинаний с начала ключа, может быть nil),
     encounter = { elapsed = сек боя с боссом, hp = доля HP босса 0..1 или nil } — только во время боя,
     deaths (смертей с начала ключа), deathPenalty (секунд штрафа за смерть),
+    forcesAtKill (% мобов 0..1 к последнему убитому боссу, 0 до первого),
     bias (поправка: насколько обычная группа медленнее залогированных тайм-забегов)
 }
 ]]
@@ -218,6 +219,22 @@ local function BossDPSRatio(mine, ref)
     end
     return n > 0 and sum / n or nil
 end
+
+-- Маршрут по своим ключам в этом данже: средний % мобов к пуллу каждого босса и по скольким ключам он посчитан.
+-- В WCL % мобов не хранится, поэтому только по своей истории.
+local function ForcesRoute(instanceID)
+    local history = KC.db and KC.db.history and KC.db.history[instanceID]
+    local sum, n = {}, {}
+    for _, r in ipairs(history or {}) do
+        for i, f in pairs(r.f or {}) do
+            sum[i], n[i] = (sum[i] or 0) + f, (n[i] or 0) + 1
+        end
+    end
+    local route = {}
+    for i, s in pairs(sum) do route[i] = s / n[i] end
+    return route, n
+end
+
 function Model.Estimate(state)
     local level = state.level or 0
     local refs, dungeon = Model.GetRefs(state.instanceID, level, state.specs)
@@ -261,6 +278,17 @@ function Model.Estimate(state)
             if bt then sum, wsum = sum + ref.w * bt, wsum + ref.w end
         end
         fightRef = wsum > 0 and sum / wsum or nil
+    end
+
+    -- между боссами: какая доля обычного трэша до следующего босса уже набрана (0..1) и насколько этому верить
+    local trashDone, trashW
+    if not enc and k < bossCount then
+        local route, routeN = ForcesRoute(state.instanceID)
+        local need, from = route[k + 1], state.forcesAtKill
+        if need and from and need - from > 0.02 then
+            trashDone = max(0, min(1, (forces - from) / (need - from)))
+            trashW = min(0.6, 0.2 * routeN[k + 1])
+        end
     end
 
     for _, ref in ipairs(refs) do
@@ -316,7 +344,14 @@ function Model.Estimate(state)
             -- даже если отрезок до босса затянулся, впереди ещё сам бой с ним
             local spent = (elapsed - lastT) / rate
             local nextFight = (r.bt and r.bt[k + 1]) or 0.25 * (nextKill - refLast)
-            refRem = max((T - refLast) - spent, (T - nextKill) + max(0.6 * nextFight, 0.05 * (nextKill - refLast)))
+            local minRem = (T - nextKill) + max(0.6 * nextFight, 0.05 * (nextKill - refLast))
+            refRem = max((T - refLast) - spent, minRem)
+            -- по времени модель не знает, где группа; по % мобов видно, сколько трэша до босса осталось
+            if trashDone then
+                local trash = max(0, (nextKill - refLast) - nextFight)
+                local byForces = trash * (1 - trashDone) + nextFight + (T - nextKill)
+                refRem = max(minRem, trashW * byForces + (1 - trashW) * refRem)
+            end
         end
 
         -- будущие смерти: наш темп смертей (сглаженный к темпу эталона, пока ключ короткий) против эталонного;

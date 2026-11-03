@@ -35,12 +35,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         # порядок важности: сначала +10..+22, потом +2..+9, потом +23 и выше
         # и волнами по объёму: сначала по 25 забегов на всё, потом до 50, потом до 100
+        # --refetch-old: забеги, скачанные старой версией скрипта, перекачиваются (кики, смерти, бои с боссами)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           start=$(date +%s)
           while true; do
-            python -u tools/wcl_fetch.py --levels "10-22,2-9,23-30" --runs "25,50,100" --region EU --no-wait --max-minutes 40 \
+            python -u tools/wcl_fetch.py --levels "10-22,2-9,23-30" --runs "25,50,100" --region EU --no-wait --max-minutes 40 --refetch-old \
               || failed=1
             git add KeyChance/Data.lua tools/wcl_cache.json
             if git diff --cached --quiet; then

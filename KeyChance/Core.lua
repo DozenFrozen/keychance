@@ -139,6 +139,8 @@ local function StartRun()
         level = level or 0, timeLimit = timeLimit or 0, kills = {},
         bosses = {},     -- по порядку убийства: { name, dur, dmg, dps, int, wipes }
         chanceLog = {},  -- { { t = секунда ключа, p = шанс }, ... } — для графика
+        fp = {},         -- % мобов (0..1) к пуллу каждого босса — так видно, сколько трэша обычно бьют до него
+        fk = {},         -- % мобов к убийству каждого босса
         wipes = 0,
     }
     -- восстановление после /reload посреди ключа
@@ -148,13 +150,14 @@ local function StartRun()
         run.bosses = saved.bosses or run.bosses
         run.chanceLog = saved.chanceLog or run.chanceLog
         run.wipes = saved.wipes or 0
+        run.fp, run.fk = saved.fp or run.fp, saved.fk or run.fk
         run.startChance = run.chanceLog[1] and run.chanceLog[1].p
     else
         KC.Damage.Start()
     end
     KC.db.current = {
         mapID = mapID, level = run.level, kills = run.kills, bosses = run.bosses, chanceLog = run.chanceLog,
-        wipes = run.wipes,
+        wipes = run.wipes, fp = run.fp, fk = run.fk,
     }
     KC.run = run
     InspectNext()
@@ -212,7 +215,7 @@ local function FinishRun()
             l = run.level, t = t, timed = onTime and true or false,
             s = specs, k = run.kills,
             d = dmg and dmg > 0 and dmg / t or nil,
-            i = ints, bt = bt, bp = bp, dd = deaths,
+            i = ints, bt = bt, bp = bp, dd = deaths, f = run.fp,
             date = date("%Y-%m-%d"),
         }
         hist[#hist + 1] = summaryHist
@@ -241,6 +244,9 @@ local function EncounterStart(id, name)
     local run = KC.run
     if not run then return end
     run.encounter = { id = id, name = name, start = GetTime() }
+    -- только первый пулл: после вайпа трэш уже не добивают
+    local i = #run.kills + 1
+    if not run.fp[i] then run.fp[i] = run.forces or 0 end
     KC.Damage.BossStart()
 end
 
@@ -315,6 +321,7 @@ local function Update()
         local bossCount, killed, forces, forcesCur, forcesTotal = ReadCriteria()
         while #run.kills < killed do
             run.kills[#run.kills + 1] = elapsed
+            run.fk[#run.kills] = forces
         end
         run.elapsed, run.bossCount, run.forces = elapsed, bossCount, forces
         run.forcesCur, run.forcesTotal = forcesCur, forcesTotal
@@ -339,6 +346,7 @@ local function Update()
             elapsed = elapsed, kills = run.kills, bossCount = bossCount, forces = forces,
             specs = run.specs, groupDPS = run.groupDPS, bossDPS = BossDPSList(run.bosses),
             interrupts = run.interrupts, bias = KC.db.bias,
+            forcesAtKill = run.fk[#run.kills] or (#run.kills == 0 and 0 or nil),
             deaths = run.deaths,
             deathPenalty = run.deaths and run.deaths > 0 and run.deathTime > 0 and run.deathTime / run.deaths or nil,
         })
@@ -542,12 +550,18 @@ local function BuildDemo(live)
         end
     end
 
-    -- live: середина боя со 2-м боссом (или с последним, если боссов меньше)
-    local liveBoss = math.min(2, #r.k)
-    local stop = live and (r.k[liveBoss] - bosses[liveBoss].dur * 0.45) or r.t
+    -- live: случайный момент от убийства первого босса до конца ключа (может попасть и в бой с боссом)
+    local stop = r.t
+    if live then
+        local from = (r.k[1] or 0) + 5
+        stop = from + math.random() * math.max(0, r.t - 10 - from)
+    end
+    local times = {}
+    for t = 0, stop, 10 do times[#times + 1] = t end
+    if times[#times] < stop then times[#times + 1] = stop end
     local log, chanceAt, res = {}, {}, nil
-    local kills, step = {}, 10
-    for t = 0, stop, step do
+    local kills = {}
+    for _, t in ipairs(times) do
         wipe(kills)
         for _, kt in ipairs(r.k) do
             if kt <= t then kills[#kills + 1] = kt end
@@ -570,19 +584,20 @@ local function BuildDemo(live)
     local onTime = r.t <= timeLimit
 
     if live then
-        local killed = {}
-        for i = 1, liveBoss - 1 do killed[i] = r.k[i] end
-        local fightT = bosses[liveBoss].dur * 0.55
-        local done = {}
-        for i = 1, liveBoss - 1 do done[i] = bosses[i] end
+        local killed, done = {}, {}
+        for i, kt in ipairs(r.k) do
+            if kt <= stop then killed[i], done[i] = kt, bosses[i] end
+        end
+        local ei, fightT = Encounter(stop)
         local d = math.floor(deaths * stop / r.t)
         return {
             live = true, instanceID = instanceID, name = name, level = r.l, timeLimit = timeLimit, result = res, elapsed = stop,
             forces = math.min(1, stop / (r.t * 0.95)), kills = killed, bossCount = #r.k, bosses = done,
             bossDPS = BossDPSTotal(done), groupDPS = r.d, specs = r.s,
-            interrupts = math.floor((r.i or 45) * stop / r.t), fightInterrupts = math.random(1, 4),
+            interrupts = math.floor((r.i or 45) * stop / r.t), fightInterrupts = math.random(0, 4),
             deaths = d, deathTime = d * 15, chanceLog = log,
-            encounter = { id = bossIDs[liveBoss], name = names[liveBoss], start = GetTime() - fightT, hp = 0.45 },
+            encounter = ei and { id = bossIDs[ei], name = names[ei], start = GetTime() - fightT,
+                hp = 1 - fightT / bosses[ei].dur } or nil,
         }
     end
     log[#log + 1] = { t = r.t, p = onTime and 1 or 0 }
@@ -593,6 +608,26 @@ local function BuildDemo(live)
         deaths = deaths, deathTime = deaths * 15, result = res, startChance = log[1].p, chanceAt = chanceAt,
         chanceLog = log, date = date("%Y-%m-%d %H:%M"),
     }
+end
+
+-- mode: "summary" — итоги случайного ключа, "live" — ключ в процессе, "off" — выключить.
+-- Пока демо включено, настройки показа строк применяются к нему сразу — удобно настроить окно и снять скриншоты.
+function KC.SetDemo(mode)
+    if mode == "off" then
+        KC.demo = nil
+        print(L["KeyChance: демо выключено"])
+    else
+        KC.demo = BuildDemo(mode == "live")
+        if KC.demo then
+            KC.db.shown = true
+            KC.UI.SetShown(true)
+            print((L["KeyChance: демо — %s +%d. Ещё раз: /kc demo, в процессе: /kc demo live, выключить: /kc demo off"])
+                :format(KC.DungeonName(KC.demo.instanceID, KC.demo.name) or "?", KC.demo.level))
+        else
+            print(L["KeyChance: в базе нет забегов для демо"])
+        end
+    end
+    Update()
 end
 
 ------------------------------------------------------------------------
@@ -614,20 +649,7 @@ SlashCmdList.KEYCHANCE = function(msg)
     elseif cmd == "config" or cmd == "options" then
         KC.Options.Open()
     elseif cmd == "demo" then
-        if arg == "off" then
-            KC.demo = nil
-            print(L["KeyChance: демо выключено"])
-        else
-            KC.demo = BuildDemo(arg == "live")
-            if KC.demo then
-                KC.db.shown = true
-                KC.UI.SetShown(true)
-                print((L["KeyChance: демо — %s +%d. Ещё раз: /kc demo, в процессе: /kc demo live, выключить: /kc demo off"])
-                    :format(KC.DungeonName(KC.demo.instanceID, KC.demo.name) or "?", KC.demo.level))
-            else
-                print(L["KeyChance: в базе нет забегов для демо"])
-            end
-        end
+        KC.SetDemo(arg == "off" and "off" or arg == "live" and "live" or "summary")
     elseif cmd == "graph" then
         KC.Graph.ShowLatest()
     elseif cmd == "lang" and (arg == "auto" or arg == "ru" or arg == "en") then
@@ -646,7 +668,7 @@ SlashCmdList.KEYCHANCE = function(msg)
         KC.UI.Toggle()
     else
         print(L["KeyChance: /kc — показать/скрыть, /kc config — настройки, /kc graph — график шанса, "]
-            .. L["/kc lock, /kc reset, /kc minimap, /kc lang auto/ru/en, /kc bias <число>, /kc history, /kc clearhistory"])
+            .. L["/kc demo, /kc demo live, /kc demo off, /kc lock, /kc reset, /kc minimap, /kc lang auto/ru/en, /kc bias <число>, /kc history, /kc clearhistory"])
     end
     Update()
 end
