@@ -43615,6 +43615,18 @@ KC.Data = {
                     bp = {880907, 674866, 367546, 480220},
                 },
                 {
+                    l = 4,
+                    t = 892.3,
+                    b = 3,
+                    d = 571225,
+                    s = {"DeathKnight-Blood", "Paladin-Holy", "Mage-Frost", "Evoker-Devastation", "Warlock-Demonology"},
+                    k = {253.1, 444.1, 674.2, 892.0},
+                    i = 22,
+                    dd = 0,
+                    bt = {40.4, 75.5, 65.1, 55.4},
+                    bp = {1100389, 637687, 445037, 538129},
+                },
+                {
                     l = 5,
                     t = 1050.7,
                     b = 3,
@@ -90001,11 +90013,11 @@ KC.Data = {
             },
         },
         [4] = {
-            runs = 282,
+            runs = 283,
             specs = {
                 ["DeathKnight-Blood"] = {
-                    n = 71,
-                    dps = 69484,
+                    n = 72,
+                    dps = 70006,
                 },
                 ["DeathKnight-Frost"] = {
                     n = 22,
@@ -90048,8 +90060,8 @@ KC.Data = {
                     dps = 85273,
                 },
                 ["Evoker-Devastation"] = {
-                    n = 6,
-                    dps = 146266,
+                    n = 7,
+                    dps = 145381,
                 },
                 ["Evoker-Preservation"] = {
                     n = 22,
@@ -90076,8 +90088,8 @@ KC.Data = {
                     dps = 121776,
                 },
                 ["Mage-Frost"] = {
-                    n = 17,
-                    dps = 114621,
+                    n = 18,
+                    dps = 112038,
                 },
                 ["Monk-Brewmaster"] = {
                     n = 18,
@@ -90092,8 +90104,8 @@ KC.Data = {
                     dps = 120483,
                 },
                 ["Paladin-Holy"] = {
-                    n = 59,
-                    dps = 22899,
+                    n = 60,
+                    dps = 22585,
                 },
                 ["Paladin-Protection"] = {
                     n = 57,
@@ -90144,8 +90156,8 @@ KC.Data = {
                     dps = 153328,
                 },
                 ["Warlock-Demonology"] = {
-                    n = 59,
-                    dps = 114632,
+                    n = 60,
+                    dps = 116921,
                 },
                 ["Warlock-Destruction"] = {
                     n = 8,
