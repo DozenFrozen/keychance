@@ -35069,6 +35069,30 @@ KC.Data = {
                 },
                 {
                     l = 6,
+                    t = 1153.1,
+                    b = 3,
+                    d = 389094,
+                    s = {"Druid-Guardian", "Shaman-Restoration", "Hunter-BeastMastery", "Evoker-Devastation", "Shaman-Elemental"},
+                    k = {242.7, 692.0, 962.9, 1152.7},
+                    i = 32,
+                    dd = 0,
+                    bt = {100.6, 90.8, 141.1, 99.4},
+                    bp = {300382, 393275, 234892, 474763},
+                },
+                {
+                    l = 6,
+                    t = 1100.8,
+                    b = 3,
+                    d = 433044,
+                    s = {"Warrior-Protection", "Priest-Holy", "Mage-Frost", "Shaman-Elemental", "DeathKnight-Frost"},
+                    k = {242.9, 628.0, 925.7, 1100.4},
+                    i = 32,
+                    dd = 0,
+                    bt = {89.4, 96.0, 137.4, 83.8},
+                    bp = {337258, 357055, 241183, 564391},
+                },
+                {
+                    l = 6,
                     t = 1019.0,
                     b = 3,
                     d = 437787,
@@ -35078,6 +35102,18 @@ KC.Data = {
                     dd = 0,
                     bt = {73.6, 85.5, 103.6, 93.5},
                     bp = {410987, 390137, 320069, 505182},
+                },
+                {
+                    l = 6,
+                    t = 946.1,
+                    b = 3,
+                    d = 473598,
+                    s = {"Monk-Brewmaster", "Monk-Mistweaver", "Warlock-Destruction", "Hunter-BeastMastery", "Rogue-Subtlety"},
+                    k = {234.5, 565.2, 795.7, 945.7},
+                    i = 19,
+                    dd = 2,
+                    bt = {64.9, 67.8, 99.0, 70.5},
+                    bp = {441979, 479067, 334927, 671561},
                 },
                 {
                     l = 6,
@@ -96379,15 +96415,15 @@ KC.Data = {
             },
         },
         [6] = {
-            runs = 287,
+            runs = 290,
             specs = {
                 ["DeathKnight-Blood"] = {
                     n = 62,
                     dps = 79864,
                 },
                 ["DeathKnight-Frost"] = {
-                    n = 16,
-                    dps = 141875,
+                    n = 17,
+                    dps = 143224,
                 },
                 ["DeathKnight-Unholy"] = {
                     n = 12,
@@ -96414,8 +96450,8 @@ KC.Data = {
                     dps = 161408,
                 },
                 ["Druid-Guardian"] = {
-                    n = 76,
-                    dps = 73544,
+                    n = 77,
+                    dps = 73650,
                 },
                 ["Druid-Restoration"] = {
                     n = 36,
@@ -96426,16 +96462,16 @@ KC.Data = {
                     dps = 125002,
                 },
                 ["Evoker-Devastation"] = {
-                    n = 12,
-                    dps = 147989,
+                    n = 13,
+                    dps = 143839,
                 },
                 ["Evoker-Preservation"] = {
                     n = 17,
                     dps = 29007,
                 },
                 ["Hunter-BeastMastery"] = {
-                    n = 95,
-                    dps = 157223,
+                    n = 97,
+                    dps = 156111,
                 },
                 ["Hunter-Marksmanship"] = {
                     n = 10,
@@ -96454,16 +96490,16 @@ KC.Data = {
                     dps = 145888,
                 },
                 ["Mage-Frost"] = {
-                    n = 25,
-                    dps = 142184,
+                    n = 26,
+                    dps = 140904,
                 },
                 ["Monk-Brewmaster"] = {
-                    n = 22,
-                    dps = 69545,
+                    n = 23,
+                    dps = 68728,
                 },
                 ["Monk-Mistweaver"] = {
-                    n = 18,
-                    dps = 27911,
+                    n = 19,
+                    dps = 27684,
                 },
                 ["Monk-Windwalker"] = {
                     n = 18,
@@ -96486,8 +96522,8 @@ KC.Data = {
                     dps = 15767,
                 },
                 ["Priest-Holy"] = {
-                    n = 62,
-                    dps = 16067,
+                    n = 63,
+                    dps = 15814,
                 },
                 ["Priest-Shadow"] = {
                     n = 26,
@@ -96502,20 +96538,20 @@ KC.Data = {
                     dps = 102454,
                 },
                 ["Rogue-Subtlety"] = {
-                    n = 72,
-                    dps = 176861,
+                    n = 73,
+                    dps = 176744,
                 },
                 ["Shaman-Elemental"] = {
-                    n = 53,
-                    dps = 157431,
+                    n = 55,
+                    dps = 156334,
                 },
                 ["Shaman-Enhancement"] = {
                     n = 35,
                     dps = 166055,
                 },
                 ["Shaman-Restoration"] = {
-                    n = 76,
-                    dps = 22341,
+                    n = 77,
+                    dps = 22112,
                 },
                 ["Warlock-Affliction"] = {
                     n = 18,
@@ -96526,8 +96562,8 @@ KC.Data = {
                     dps = 143667,
                 },
                 ["Warlock-Destruction"] = {
-                    n = 10,
-                    dps = 154100,
+                    n = 11,
+                    dps = 148653,
                 },
                 ["Warrior-Arms"] = {
                     n = 63,
@@ -96538,8 +96574,8 @@ KC.Data = {
                     dps = 137743,
                 },
                 ["Warrior-Protection"] = {
-                    n = 46,
-                    dps = 87816,
+                    n = 47,
+                    dps = 86892,
                 },
             },
         },
