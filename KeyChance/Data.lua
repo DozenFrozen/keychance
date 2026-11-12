@@ -4459,6 +4459,42 @@ KC.Data = {
                 },
                 {
                     l = 13,
+                    t = 1044.1,
+                    b = 3,
+                    d = 1246551,
+                    s = {"DemonHunter-Vengeance", "Shaman-Restoration", "Druid-Feral", "Warrior-Arms", "Shaman-Elemental"},
+                    k = {391.1, 654.3, 1044.0},
+                    i = 67,
+                    dd = 0,
+                    bt = {120.2, 129.2, 125.1},
+                    bp = {581781, 742675, 635097},
+                },
+                {
+                    l = 13,
+                    t = 1071.0,
+                    b = 3,
+                    d = 1249419,
+                    s = {"DeathKnight-Blood", "Druid-Restoration", "Shaman-Elemental", "Warrior-Arms", "Hunter-BeastMastery"},
+                    k = {427.4, 669.3, 1070.7},
+                    i = 70,
+                    dd = 1,
+                    bt = {107.8, 84.1, 120.3},
+                    bp = {648024, 1091017, 660034},
+                },
+                {
+                    l = 13,
+                    t = 1074.1,
+                    b = 3,
+                    d = 1212006,
+                    s = {"DeathKnight-Blood", "Priest-Holy", "Mage-Arcane", "Paladin-Retribution", "Warrior-Arms"},
+                    k = {420.4, 687.4, 1073.7},
+                    i = 64,
+                    dd = 1,
+                    bt = {129.0, 102.4, 138.2},
+                    bp = {540483, 921208, 574564},
+                },
+                {
+                    l = 13,
                     t = 1041.4,
                     b = 3,
                     d = 1222307,
@@ -4498,8 +4534,12 @@ KC.Data = {
                     t = 1009.8,
                     b = 3,
                     d = 1383459,
-                    s = {"DeathKnight-Blood", "Shaman-Restoration", "Paladin-Retribution", "Hunter-BeastMastery", "Warlock-Affliction"},
+                    s = {"DeathKnight-Blood", "Shaman-Restoration", "Paladin-Retribution", "Warlock-Affliction", "Hunter-BeastMastery"},
                     k = {370.8, 636.3, 1009.4},
+                    i = 72,
+                    dd = 3,
+                    bt = {113.1, 99.1, 116.4},
+                    bp = {982446, 955146, 681879},
                 },
                 {
                     l = 13,
@@ -121182,11 +121222,11 @@ KC.Data = {
             },
         },
         [13] = {
-            runs = 441,
+            runs = 444,
             specs = {
                 ["DeathKnight-Blood"] = {
-                    n = 115,
-                    dps = 165921,
+                    n = 117,
+                    dps = 166149,
                 },
                 ["DeathKnight-Frost"] = {
                     n = 31,
@@ -121205,24 +121245,24 @@ KC.Data = {
                     dps = 271572,
                 },
                 ["DemonHunter-Vengeance"] = {
-                    n = 41,
-                    dps = 146495,
+                    n = 42,
+                    dps = 147503,
                 },
                 ["Druid-Balance"] = {
                     n = 47,
                     dps = 293169,
                 },
                 ["Druid-Feral"] = {
-                    n = 17,
-                    dps = 279306,
+                    n = 18,
+                    dps = 287988,
                 },
                 ["Druid-Guardian"] = {
                     n = 129,
                     dps = 148568,
                 },
                 ["Druid-Restoration"] = {
-                    n = 30,
-                    dps = 25439,
+                    n = 31,
+                    dps = 25911,
                 },
                 ["Evoker-Augmentation"] = {
                     n = 5,
@@ -121237,8 +121277,8 @@ KC.Data = {
                     dps = 61646,
                 },
                 ["Hunter-BeastMastery"] = {
-                    n = 136,
-                    dps = 287068,
+                    n = 137,
+                    dps = 287784,
                 },
                 ["Hunter-Marksmanship"] = {
                     n = 12,
@@ -121249,8 +121289,8 @@ KC.Data = {
                     dps = 296638,
                 },
                 ["Mage-Arcane"] = {
-                    n = 165,
-                    dps = 291473,
+                    n = 166,
+                    dps = 291770,
                 },
                 ["Mage-Fire"] = {
                     n = 3,
@@ -121281,16 +121321,16 @@ KC.Data = {
                     dps = 156768,
                 },
                 ["Paladin-Retribution"] = {
-                    n = 105,
-                    dps = 289894,
+                    n = 106,
+                    dps = 290253,
                 },
                 ["Priest-Discipline"] = {
                     n = 18,
                     dps = 27755,
                 },
                 ["Priest-Holy"] = {
-                    n = 56,
-                    dps = 28108,
+                    n = 57,
+                    dps = 28112,
                 },
                 ["Priest-Shadow"] = {
                     n = 27,
@@ -121309,16 +121349,16 @@ KC.Data = {
                     dps = 338815,
                 },
                 ["Shaman-Elemental"] = {
-                    n = 136,
-                    dps = 290958,
+                    n = 138,
+                    dps = 292404,
                 },
                 ["Shaman-Enhancement"] = {
                     n = 27,
                     dps = 313493,
                 },
                 ["Shaman-Restoration"] = {
-                    n = 124,
-                    dps = 43093,
+                    n = 125,
+                    dps = 43088,
                 },
                 ["Warlock-Affliction"] = {
                     n = 19,
@@ -121333,8 +121373,8 @@ KC.Data = {
                     dps = 295143,
                 },
                 ["Warrior-Arms"] = {
-                    n = 121,
-                    dps = 283446,
+                    n = 124,
+                    dps = 282871,
                 },
                 ["Warrior-Fury"] = {
                     n = 27,
