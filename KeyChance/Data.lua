@@ -57405,6 +57405,18 @@ KC.Data = {
                 },
                 {
                     l = 22,
+                    t = 1836.4,
+                    b = 1,
+                    d = 1250163,
+                    s = {"Druid-Guardian", "Paladin-Holy", "Shaman-Elemental", "Rogue-Subtlety", "Warrior-Arms"},
+                    k = {415.1, 1096.4, 1497.1, 1836.0},
+                    i = 68,
+                    dd = 3,
+                    bt = {213.1, 221.7, 277.3, 213.7},
+                    bp = {848658, 917655, 883145, 1105989},
+                },
+                {
+                    l = 22,
                     t = 1884.5,
                     b = 1,
                     d = 1200327,
@@ -166707,7 +166719,7 @@ KC.Data = {
             },
         },
         [22] = {
-            runs = 538,
+            runs = 539,
             specs = {
                 ["DeathKnight-Blood"] = {
                     n = 131,
@@ -166734,8 +166746,8 @@ KC.Data = {
                     dps = 496628,
                 },
                 ["Druid-Guardian"] = {
-                    n = 352,
-                    dps = 243115,
+                    n = 353,
+                    dps = 242931,
                 },
                 ["Druid-Restoration"] = {
                     n = 5,
@@ -166778,8 +166790,8 @@ KC.Data = {
                     dps = 456064,
                 },
                 ["Paladin-Holy"] = {
-                    n = 359,
-                    dps = 79469,
+                    n = 360,
+                    dps = 79453,
                 },
                 ["Paladin-Protection"] = {
                     n = 12,
@@ -166810,12 +166822,12 @@ KC.Data = {
                     dps = 408103,
                 },
                 ["Rogue-Subtlety"] = {
-                    n = 413,
-                    dps = 482299,
+                    n = 414,
+                    dps = 481979,
                 },
                 ["Shaman-Elemental"] = {
-                    n = 367,
-                    dps = 437204,
+                    n = 368,
+                    dps = 436873,
                 },
                 ["Shaman-Enhancement"] = {
                     n = 3,
@@ -166834,8 +166846,8 @@ KC.Data = {
                     dps = 401872,
                 },
                 ["Warrior-Arms"] = {
-                    n = 383,
-                    dps = 423922,
+                    n = 384,
+                    dps = 423686,
                 },
                 ["Warrior-Fury"] = {
                     n = 4,
