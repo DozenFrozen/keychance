@@ -21130,6 +21130,42 @@ KC.Data = {
                 },
                 {
                     l = 10,
+                    t = 1121.7,
+                    b = 3,
+                    d = 761267,
+                    s = {"Druid-Guardian", "Shaman-Restoration", "Rogue-Subtlety", "DeathKnight-Frost", "Monk-Windwalker"},
+                    k = {365.3, 761.6, 1121.6},
+                    i = 115,
+                    dd = 0,
+                    bt = {112.1, 93.6, 79.0},
+                    bp = {465407, 534437, 609497},
+                },
+                {
+                    l = 10,
+                    t = 1075.8,
+                    b = 3,
+                    d = 795450,
+                    s = {"Warrior-Protection", "Shaman-Restoration", "Hunter-Marksmanship", "Paladin-Retribution", "Evoker-Augmentation"},
+                    k = {279.4, 664.4, 1013.4},
+                    i = 142,
+                    dd = 1,
+                    bt = {94.8, 104.1, 84.2},
+                    bp = {670356, 493794, 570645},
+                },
+                {
+                    l = 10,
+                    t = 1134.5,
+                    b = 3,
+                    d = 775381,
+                    s = {"Paladin-Protection", "Shaman-Restoration", "Mage-Arcane", "DeathKnight-Frost", "Rogue-Subtlety"},
+                    k = {321.4, 725.3, 1134.1},
+                    i = 160,
+                    dd = 1,
+                    bt = {118.2, 115.7, 157.3},
+                    bp = {441730, 457412, 305838},
+                },
+                {
+                    l = 10,
                     t = 1001.1,
                     b = 3,
                     d = 838027,
@@ -161839,15 +161875,15 @@ KC.Data = {
             },
         },
         [10] = {
-            runs = 463,
+            runs = 466,
             specs = {
                 ["DeathKnight-Blood"] = {
                     n = 83,
                     dps = 135522,
                 },
                 ["DeathKnight-Frost"] = {
-                    n = 52,
-                    dps = 245914,
+                    n = 54,
+                    dps = 244790,
                 },
                 ["DeathKnight-Unholy"] = {
                     n = 14,
@@ -161874,16 +161910,16 @@ KC.Data = {
                     dps = 221844,
                 },
                 ["Druid-Guardian"] = {
-                    n = 128,
-                    dps = 132541,
+                    n = 129,
+                    dps = 132449,
                 },
                 ["Druid-Restoration"] = {
                     n = 66,
                     dps = 22861,
                 },
                 ["Evoker-Augmentation"] = {
-                    n = 17,
-                    dps = 216530,
+                    n = 18,
+                    dps = 212007,
                 },
                 ["Evoker-Devastation"] = {
                     n = 8,
@@ -161898,16 +161934,16 @@ KC.Data = {
                     dps = 255443,
                 },
                 ["Hunter-Marksmanship"] = {
-                    n = 21,
-                    dps = 247465,
+                    n = 22,
+                    dps = 249835,
                 },
                 ["Hunter-Survival"] = {
                     n = 4,
                     dps = 209876,
                 },
                 ["Mage-Arcane"] = {
-                    n = 143,
-                    dps = 241593,
+                    n = 144,
+                    dps = 241284,
                 },
                 ["Mage-Fire"] = {
                     n = 11,
@@ -161926,20 +161962,20 @@ KC.Data = {
                     dps = 44588,
                 },
                 ["Monk-Windwalker"] = {
-                    n = 45,
-                    dps = 256668,
+                    n = 46,
+                    dps = 254468,
                 },
                 ["Paladin-Holy"] = {
                     n = 82,
                     dps = 37882,
                 },
                 ["Paladin-Protection"] = {
-                    n = 125,
-                    dps = 137490,
+                    n = 126,
+                    dps = 137389,
                 },
                 ["Paladin-Retribution"] = {
-                    n = 116,
-                    dps = 245893,
+                    n = 117,
+                    dps = 245724,
                 },
                 ["Priest-Discipline"] = {
                     n = 22,
@@ -161962,8 +161998,8 @@ KC.Data = {
                     dps = 178921,
                 },
                 ["Rogue-Subtlety"] = {
-                    n = 136,
-                    dps = 268841,
+                    n = 138,
+                    dps = 267997,
                 },
                 ["Shaman-Elemental"] = {
                     n = 118,
@@ -161974,8 +162010,8 @@ KC.Data = {
                     dps = 252937,
                 },
                 ["Shaman-Restoration"] = {
-                    n = 122,
-                    dps = 35991,
+                    n = 125,
+                    dps = 36031,
                 },
                 ["Warlock-Affliction"] = {
                     n = 20,
@@ -161998,8 +162034,8 @@ KC.Data = {
                     dps = 200797,
                 },
                 ["Warrior-Protection"] = {
-                    n = 53,
-                    dps = 133788,
+                    n = 54,
+                    dps = 133269,
                 },
             },
         },
