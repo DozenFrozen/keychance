@@ -79087,6 +79087,30 @@ KC.Data = {
                 },
                 {
                     l = 12,
+                    t = 856.6,
+                    b = 3,
+                    d = 1201291,
+                    s = {"DeathKnight-Blood", "Evoker-Preservation", "Warrior-Fury", "Warlock-Destruction", "Rogue-Subtlety"},
+                    k = {275.5, 641.1, 856.4},
+                    i = 50,
+                    dd = 0,
+                    bt = {122.5, 93.6, 113.5},
+                    bp = {881499, 739565, 901385},
+                },
+                {
+                    l = 12,
+                    t = 850.0,
+                    b = 3,
+                    d = 1130300,
+                    s = {"Druid-Guardian", "Priest-Holy", "Mage-Arcane", "Hunter-BeastMastery", "Rogue-Subtlety"},
+                    k = {217.9, 581.1, 783.3},
+                    i = 47,
+                    dd = 0,
+                    bt = {105.8, 87.9, 101.5},
+                    bp = {1233119, 833301, 754227},
+                },
+                {
+                    l = 12,
                     t = 817.4,
                     b = 3,
                     d = 1209761,
@@ -158341,11 +158365,11 @@ KC.Data = {
             },
         },
         [12] = {
-            runs = 338,
+            runs = 340,
             specs = {
                 ["DeathKnight-Blood"] = {
-                    n = 71,
-                    dps = 160022,
+                    n = 72,
+                    dps = 160044,
                 },
                 ["DeathKnight-Frost"] = {
                     n = 21,
@@ -158376,8 +158400,8 @@ KC.Data = {
                     dps = 274467,
                 },
                 ["Druid-Guardian"] = {
-                    n = 115,
-                    dps = 147971,
+                    n = 116,
+                    dps = 147960,
                 },
                 ["Druid-Restoration"] = {
                     n = 33,
@@ -158392,12 +158416,12 @@ KC.Data = {
                     dps = 304349,
                 },
                 ["Evoker-Preservation"] = {
-                    n = 18,
-                    dps = 55394,
+                    n = 19,
+                    dps = 56349,
                 },
                 ["Hunter-BeastMastery"] = {
-                    n = 92,
-                    dps = 286724,
+                    n = 93,
+                    dps = 286817,
                 },
                 ["Hunter-Marksmanship"] = {
                     n = 15,
@@ -158408,8 +158432,8 @@ KC.Data = {
                     dps = 273948,
                 },
                 ["Mage-Arcane"] = {
-                    n = 117,
-                    dps = 273388,
+                    n = 118,
+                    dps = 273974,
                 },
                 ["Mage-Fire"] = {
                     n = 8,
@@ -158448,8 +158472,8 @@ KC.Data = {
                     dps = 30415,
                 },
                 ["Priest-Holy"] = {
-                    n = 57,
-                    dps = 27770,
+                    n = 58,
+                    dps = 28073,
                 },
                 ["Priest-Shadow"] = {
                     n = 21,
@@ -158464,8 +158488,8 @@ KC.Data = {
                     dps = 294516,
                 },
                 ["Rogue-Subtlety"] = {
-                    n = 142,
-                    dps = 318679,
+                    n = 144,
+                    dps = 318463,
                 },
                 ["Shaman-Elemental"] = {
                     n = 105,
@@ -158488,16 +158512,16 @@ KC.Data = {
                     dps = 302934,
                 },
                 ["Warlock-Destruction"] = {
-                    n = 4,
-                    dps = 298265,
+                    n = 5,
+                    dps = 302314,
                 },
                 ["Warrior-Arms"] = {
                     n = 93,
                     dps = 272022,
                 },
                 ["Warrior-Fury"] = {
-                    n = 20,
-                    dps = 245084,
+                    n = 21,
+                    dps = 249687,
                 },
                 ["Warrior-Protection"] = {
                     n = 38,
