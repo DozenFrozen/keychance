@@ -2,7 +2,7 @@
 local _, KC = ...
 
 KC.Data = {
-    generated = "2026-11-21",
+    generated = "2026-11-22",
     zone = {
         id = 55,
         name = "Mythic+ Season 2",
