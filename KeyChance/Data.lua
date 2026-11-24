@@ -97396,6 +97396,30 @@ KC.Data = {
                 },
                 {
                     l = 15,
+                    t = 1294.4,
+                    b = 2,
+                    d = 1028639,
+                    s = {"Paladin-Protection", "Shaman-Restoration", "Monk-Windwalker", "Hunter-BeastMastery", "Druid-Balance"},
+                    k = {486.1, 817.7, 1294.0},
+                    i = 59,
+                    dd = 1,
+                    bt = {145.1, 107.8, 144.4},
+                    bp = {521013, 763446, 591606},
+                },
+                {
+                    l = 15,
+                    t = 1294.6,
+                    b = 2,
+                    d = 961895,
+                    s = {"Warrior-Protection", "Shaman-Restoration", "Hunter-BeastMastery", "Priest-Shadow", "Warlock-Demonology"},
+                    k = {493.9, 866.2, 1294.2},
+                    i = 53,
+                    dd = 2,
+                    bt = {131.7, 129.7, 159.3},
+                    bp = {573791, 634898, 542273},
+                },
+                {
+                    l = 15,
                     t = 1294.6,
                     b = 2,
                     d = 1074444,
@@ -108532,7 +108556,7 @@ KC.Data = {
             },
         },
         [15] = {
-            runs = 430,
+            runs = 432,
             specs = {
                 ["DeathKnight-Blood"] = {
                     n = 112,
@@ -108559,8 +108583,8 @@ KC.Data = {
                     dps = 159270,
                 },
                 ["Druid-Balance"] = {
-                    n = 21,
-                    dps = 297743,
+                    n = 22,
+                    dps = 295418,
                 },
                 ["Druid-Feral"] = {
                     n = 19,
@@ -108587,8 +108611,8 @@ KC.Data = {
                     dps = 61646,
                 },
                 ["Hunter-BeastMastery"] = {
-                    n = 122,
-                    dps = 309671,
+                    n = 124,
+                    dps = 309121,
                 },
                 ["Hunter-Marksmanship"] = {
                     n = 12,
@@ -108619,16 +108643,16 @@ KC.Data = {
                     dps = 59697,
                 },
                 ["Monk-Windwalker"] = {
-                    n = 33,
-                    dps = 306007,
+                    n = 34,
+                    dps = 305451,
                 },
                 ["Paladin-Holy"] = {
                     n = 140,
                     dps = 51348,
                 },
                 ["Paladin-Protection"] = {
-                    n = 76,
-                    dps = 170724,
+                    n = 77,
+                    dps = 170345,
                 },
                 ["Paladin-Retribution"] = {
                     n = 79,
@@ -108643,8 +108667,8 @@ KC.Data = {
                     dps = 31604,
                 },
                 ["Priest-Shadow"] = {
-                    n = 18,
-                    dps = 299470,
+                    n = 19,
+                    dps = 298447,
                 },
                 ["Rogue-Assassination"] = {
                     n = 36,
@@ -108667,16 +108691,16 @@ KC.Data = {
                     dps = 314122,
                 },
                 ["Shaman-Restoration"] = {
-                    n = 146,
-                    dps = 44027,
+                    n = 148,
+                    dps = 44007,
                 },
                 ["Warlock-Affliction"] = {
                     n = 6,
                     dps = 297766,
                 },
                 ["Warlock-Demonology"] = {
-                    n = 99,
-                    dps = 340418,
+                    n = 100,
+                    dps = 339628,
                 },
                 ["Warlock-Destruction"] = {
                     n = 3,
@@ -108691,8 +108715,8 @@ KC.Data = {
                     dps = 338595,
                 },
                 ["Warrior-Protection"] = {
-                    n = 34,
-                    dps = 171182,
+                    n = 35,
+                    dps = 170224,
                 },
             },
         },
