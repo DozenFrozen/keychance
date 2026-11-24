@@ -38124,6 +38124,18 @@ KC.Data = {
                 },
                 {
                     l = 16,
+                    t = 1483.5,
+                    b = 2,
+                    d = 1167427,
+                    s = {"Druid-Guardian", "Paladin-Holy", "DemonHunter-Havoc", "Warlock-Demonology", "Mage-Arcane"},
+                    k = {370.2, 630.4, 1059.3, 1483.3},
+                    i = 110,
+                    dd = 1,
+                    bt = {120.0, 163.8, 166.2, 158.6},
+                    bp = {1260656, 1038487, 627474, 828382},
+                },
+                {
+                    l = 16,
                     t = 1484.3,
                     b = 2,
                     d = 1202709,
@@ -90345,7 +90357,7 @@ KC.Data = {
             },
         },
         [16] = {
-            runs = 329,
+            runs = 330,
             specs = {
                 ["DeathKnight-Blood"] = {
                     n = 85,
@@ -90364,8 +90376,8 @@ KC.Data = {
                     dps = 311178,
                 },
                 ["DemonHunter-Havoc"] = {
-                    n = 30,
-                    dps = 311620,
+                    n = 31,
+                    dps = 310728,
                 },
                 ["DemonHunter-Vengeance"] = {
                     n = 23,
@@ -90380,8 +90392,8 @@ KC.Data = {
                     dps = 344122,
                 },
                 ["Druid-Guardian"] = {
-                    n = 134,
-                    dps = 167286,
+                    n = 135,
+                    dps = 167068,
                 },
                 ["Druid-Restoration"] = {
                     n = 20,
@@ -90412,8 +90424,8 @@ KC.Data = {
                     dps = 289340,
                 },
                 ["Mage-Arcane"] = {
-                    n = 122,
-                    dps = 313880,
+                    n = 123,
+                    dps = 313859,
                 },
                 ["Mage-Frost"] = {
                     n = 4,
@@ -90432,8 +90444,8 @@ KC.Data = {
                     dps = 321042,
                 },
                 ["Paladin-Holy"] = {
-                    n = 112,
-                    dps = 51971,
+                    n = 113,
+                    dps = 51793,
                 },
                 ["Paladin-Protection"] = {
                     n = 58,
@@ -90484,8 +90496,8 @@ KC.Data = {
                     dps = 319816,
                 },
                 ["Warlock-Demonology"] = {
-                    n = 79,
-                    dps = 358690,
+                    n = 80,
+                    dps = 359237,
                 },
                 ["Warlock-Destruction"] = {
                     n = 1,
