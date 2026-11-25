@@ -51528,6 +51528,30 @@ KC.Data = {
                 },
                 {
                     l = 8,
+                    t = 880.4,
+                    b = 3,
+                    d = 831168,
+                    s = {"Druid-Guardian", "Paladin-Holy", "DeathKnight-Frost", "Monk-Windwalker", "Warlock-Demonology"},
+                    k = {237.1, 414.7, 634.9, 880.0},
+                    i = 44,
+                    dd = 1,
+                    bt = {55.4, 81.9, 73.9, 68.5},
+                    bp = {1267757, 867332, 673828, 748716},
+                },
+                {
+                    l = 8,
+                    t = 982.1,
+                    b = 3,
+                    d = 735218,
+                    s = {"Paladin-Protection", "Shaman-Restoration", "Rogue-Subtlety", "Druid-Balance", "Warlock-Demonology"},
+                    k = {296.6, 490.0, 699.3, 944.8},
+                    i = 61,
+                    dd = 0,
+                    bt = {102.4, 83.0, 73.4, 103.6},
+                    bp = {755590, 905379, 674930, 600191},
+                },
+                {
+                    l = 8,
                     t = 1185.8,
                     b = 3,
                     d = 687682,
@@ -104221,15 +104245,15 @@ KC.Data = {
             },
         },
         [8] = {
-            runs = 305,
+            runs = 307,
             specs = {
                 ["DeathKnight-Blood"] = {
                     n = 62,
                     dps = 111186,
                 },
                 ["DeathKnight-Frost"] = {
-                    n = 24,
-                    dps = 181784,
+                    n = 25,
+                    dps = 184485,
                 },
                 ["DeathKnight-Unholy"] = {
                     n = 10,
@@ -104248,16 +104272,16 @@ KC.Data = {
                     dps = 106640,
                 },
                 ["Druid-Balance"] = {
-                    n = 29,
-                    dps = 184427,
+                    n = 30,
+                    dps = 185409,
                 },
                 ["Druid-Feral"] = {
                     n = 20,
                     dps = 204857,
                 },
                 ["Druid-Guardian"] = {
-                    n = 93,
-                    dps = 97879,
+                    n = 94,
+                    dps = 98331,
                 },
                 ["Druid-Restoration"] = {
                     n = 39,
@@ -104308,16 +104332,16 @@ KC.Data = {
                     dps = 37283,
                 },
                 ["Monk-Windwalker"] = {
-                    n = 24,
-                    dps = 181989,
+                    n = 25,
+                    dps = 180497,
                 },
                 ["Paladin-Holy"] = {
-                    n = 70,
-                    dps = 29908,
+                    n = 71,
+                    dps = 29972,
                 },
                 ["Paladin-Protection"] = {
-                    n = 63,
-                    dps = 106269,
+                    n = 64,
+                    dps = 106094,
                 },
                 ["Paladin-Retribution"] = {
                     n = 77,
@@ -104344,8 +104368,8 @@ KC.Data = {
                     dps = 242834,
                 },
                 ["Rogue-Subtlety"] = {
-                    n = 113,
-                    dps = 214219,
+                    n = 114,
+                    dps = 214266,
                 },
                 ["Shaman-Elemental"] = {
                     n = 70,
@@ -104356,16 +104380,16 @@ KC.Data = {
                     dps = 191403,
                 },
                 ["Shaman-Restoration"] = {
-                    n = 75,
-                    dps = 26889,
+                    n = 76,
+                    dps = 26746,
                 },
                 ["Warlock-Affliction"] = {
                     n = 5,
                     dps = 204210,
                 },
                 ["Warlock-Demonology"] = {
-                    n = 54,
-                    dps = 189581,
+                    n = 56,
+                    dps = 190902,
                 },
                 ["Warlock-Destruction"] = {
                     n = 6,
