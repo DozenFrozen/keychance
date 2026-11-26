@@ -157772,6 +157772,18 @@ KC.Data = {
                 },
                 {
                     l = 21,
+                    t = 1645.7,
+                    b = 1,
+                    d = 1579112,
+                    s = {"Druid-Guardian", "Shaman-Restoration", "Paladin-Retribution", "Paladin-Retribution", "DemonHunter-Devourer"},
+                    k = {631.9, 972.2, 1645.5},
+                    i = 82,
+                    dd = 2,
+                    bt = {214.2, 191.9, 186.5},
+                    bp = {778427, 791758, 1839471},
+                },
+                {
+                    l = 21,
                     t = 1560.7,
                     b = 1,
                     d = 1639308,
@@ -166638,7 +166650,7 @@ KC.Data = {
             },
         },
         [21] = {
-            runs = 801,
+            runs = 802,
             specs = {
                 ["DeathKnight-Blood"] = {
                     n = 217,
@@ -166653,8 +166665,8 @@ KC.Data = {
                     dps = 440052,
                 },
                 ["DemonHunter-Devourer"] = {
-                    n = 100,
-                    dps = 426512,
+                    n = 101,
+                    dps = 426333,
                 },
                 ["DemonHunter-Havoc"] = {
                     n = 81,
@@ -166673,8 +166685,8 @@ KC.Data = {
                     dps = 462651,
                 },
                 ["Druid-Guardian"] = {
-                    n = 520,
-                    dps = 229847,
+                    n = 521,
+                    dps = 229853,
                 },
                 ["Druid-Restoration"] = {
                     n = 4,
@@ -166729,8 +166741,8 @@ KC.Data = {
                     dps = 235569,
                 },
                 ["Paladin-Retribution"] = {
-                    n = 91,
-                    dps = 444082,
+                    n = 93,
+                    dps = 444028,
                 },
                 ["Priest-Discipline"] = {
                     n = 8,
@@ -166765,8 +166777,8 @@ KC.Data = {
                     dps = 409604,
                 },
                 ["Shaman-Restoration"] = {
-                    n = 197,
-                    dps = 56170,
+                    n = 198,
+                    dps = 56162,
                 },
                 ["Warlock-Demonology"] = {
                     n = 36,
